@@ -102,16 +102,6 @@ let forceProperties = {
         iterations: 1,
         radius: 5
     },
-    forceX: {
-        enabled: false,
-        strength: .1,
-        x: .5
-    },
-    forceY: {
-        enabled: false,
-        strength: .1,
-        y: .5
-    },
     link: {
         enabled: true,
         distance: 30,
@@ -142,9 +132,7 @@ function initializeForces() {
         .force("link", d3.forceLink())
         .force("charge", d3.forceManyBody())
         .force("collide", d3.forceCollide())
-        .force("center", d3.forceCenter())
-        .force("forceX", d3.forceX())
-        .force("forceY", d3.forceY());
+        .force("center", d3.forceCenter());
     // apply properties to each of the forces
     updateForces();
 }
@@ -163,12 +151,6 @@ function updateForces() {
         .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
         .radius(forceProperties.collide.radius)
         .iterations(forceProperties.collide.iterations);
-    simulation.force("forceX")
-        .strength(forceProperties.forceX.strength * forceProperties.forceX.enabled)
-        .x(width * forceProperties.forceX.x);
-    simulation.force("forceY")
-        .strength(forceProperties.forceY.strength * forceProperties.forceY.enabled)
-        .y(height * forceProperties.forceY.y);
     simulation.force("link")
         .id(function(d) {return d.id;})
         .distance(forceProperties.link.distance)
