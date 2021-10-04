@@ -50,7 +50,7 @@ svg {
   <div class="force">
     <label><strong>Api</strong>
       <label><input type="text", id="LichessId", autocomplete="off">Lichess username</label>
-      <label><input type="submit", onclick="config.LichessId=document.getElementById('minVsGame').value; startApi()">Start searching</label>
+      <label><input type="submit", onclick="config.LichessId=document.getElementById('LichessId').value; startApi()">Start searching</label>
     </label>
   </div>
 
@@ -84,7 +84,7 @@ let dlPlayers = {
 
 
 let config = {
-  lichessId: "german11",
+  lichessId: "",
   maxGame: 100,
   minVsGame: 2,
 }
