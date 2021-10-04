@@ -261,7 +261,11 @@ function initializeDisplay(graph) {
         .attr("class", "links")
     .selectAll("line")
     .data(graph.links)
-    .enter().append("line");
+    .enter().append("line")
+    .on("click", d => {
+      console.log(d.source);
+      window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}`, "_blank")});
+    // 
 
   // set the data and properties of node circles
   node = svg.append("g")
@@ -272,11 +276,12 @@ function initializeDisplay(graph) {
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
-            .on("end", dragended));
+            .on("end", dragended))
+        .on("click", d => window.open(`https://lichess.org/@/${d.id}`, "_blank"))
 
   // node tooltip
   node.append("title")
-      .text(function(d) { return d.id; });
+      .text(d => d.id);
   // visualize the graph
   updateDisplay();
 }
