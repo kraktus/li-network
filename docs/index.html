@@ -49,15 +49,15 @@ svg {
   </div>
   <div class="force">
     <label><strong>Api</strong>
-      <label><input type="text", id="LichessId">Lichess username</label>
+      <label><input type="text", id="LichessId", autocomplete="off", oninput="config.LichessId=value; restart()">Lichess username</label>
       <label><input type="submit", onclick='restart()'>Start searching</label>
     </label>
   </div>
 
   <div class="force">
     <label><strong onload="minVsGame.value = config.minVsGame">Display</strong>
-      <output id="minVsGame">2</output>
-      <input type="range" min="1" max="20" value=2 step="1" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
+      <output id="minVsGame"></output>
+      <input type="range" min="1" max="20" value="2" step="1" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
     </label>
   </div>
 
@@ -72,13 +72,24 @@ let svg = d3.select("svg"),
 // svg objects
 let link, node;
 
-const rawData = {}
+const rawData = {};
+
+// list players we already downloaded games from, and keep track of the "involvement" of a player in the network (i.e number of games played).
+let dlPlayers = {
+  alreadyDl: new Set(),
+  involvement: {}
+}
+
 
 let config = {
   lichessId: "german11",
   maxGame: 100,
   minVsGame: 2,
 }
+
+//not working: document.getElementById("minVsGame").value = config.minVsGame
+d3.select('#minVsGame').text(config.minVsGame)
+
 
 const readStream = processLine => response => {
   const stream = response.body.getReader();
@@ -87,8 +98,11 @@ const readStream = processLine => response => {
   let buf = '';
   const loop = () =>
     stream.read().then(({ done, value }) => {
+      //console.log(done, value)
       if (done) {
         if (buf.length > 0) processLine(JSON.parse(buf));
+        console.log("DONE")
+        chooseNewPlayerDl() // hacky, should be a parameter of `readStream`
       } else {
         const chunk = decoder.decode(value, {
           stream: true
@@ -116,7 +130,10 @@ const onGame = game => {
   // sorted alphabetically
   const players = [[game.players.white, "white"], [game.players.black, "black"]]
   .sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
-  console.log(players)
+  players.forEach(p => {
+   let id = p[0].user.id;
+   dlPlayers.involvement[id] = (dlPlayers.involvement[id] || 0) + 1;
+  });
   // store the outcome compared to the first player
   let score = 0
   if (game.winner == undefined) {
@@ -124,7 +141,7 @@ const onGame = game => {
   } else if (game.winner == players[0][1]) {
     score = 1
   }
-  console.log(score)
+  //console.log(score)
   let playerLink = rawData[`${players[0][0].user.id}-${players[1][0].user.id}`]
   if (playerLink == undefined) {
     playerLink = {}
@@ -138,7 +155,6 @@ const onGame = game => {
   }
   rawData[`${players[0][0].user.id}-${players[1][0].user.id}`] = playerLink
 }
-
 fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}`, options).then(readStream(onGame))
 
 const makeGraph = () => {
@@ -191,11 +207,21 @@ let forceProperties = {
 // force simulator
 let simulation = d3.forceSimulation();
 
+const chooseNewPlayerDl = () => {
+  console.log(dlPlayers);
+  const playerId = Object.entries(dlPlayers.involvement).sort(x => x[1]).map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0]
+  return playerId
+}
+
+const startApi = () => {
+  dlPlayers.alreadyDl.add(config.lichessId);
+  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}`, options).then(readStream(onGame, startApi));
+}
 
 const restart = () => {
   svg.selectAll("*").remove();
   let graph = makeGraph();
-  console.log("graph", graph);
+  //console.log("graph", graph);
   initializeSimulation(graph);
   initializeDisplay(graph);
 }
@@ -256,14 +282,14 @@ function updateForces(graph) {
 // generate the svg objects and force simulation
 function initializeDisplay(graph) {
   // set the data and properties of link lines
-  console.log("graph init", graph)
+  // console.log("graph init", graph)
   link = svg.append("g")
         .attr("class", "links")
     .selectAll("line")
     .data(graph.links)
     .enter().append("line")
     .on("click", d => {
-      console.log(d.source);
+      //console.log(d.source);
       window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}`, "_blank")});
 
   link.append("title")
