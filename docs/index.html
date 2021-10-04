@@ -52,7 +52,7 @@ svg {
   </div>
   <div class="force">
     <label><input type="text", id="LichessId">Lichess username</label>
-    <label><input type="submit", onclick=''>Start searching</label>
+    <label><input type="submit", onclick='restart()'>Start searching</label>
   </div>
 
 </div>
@@ -66,7 +66,7 @@ const svg = d3.select("svg"),
 // svg objects
 let link, node;
 // the data - an object with nodes and links
-const graph = {
+const graphEx = {
   "nodes": [
     {"id": "Myriel", "group": 1},
     {"id": "Count", "group": 1},
@@ -84,7 +84,7 @@ const rawData = {}
 let config = {
   lichessId: "",
   maxGame: 100,
-  minVsGame: 2,
+  minVsGame: 1, // DEBUG
 }
 
 const readStream = processLine => response => {
@@ -144,12 +144,34 @@ const onGame = game => {
     playerLink.createdAt = game.createdAt
   }
   rawData[`${players[0][0].user.id}-${players[1][0].user.id}`] = playerLink
-  console.log(rawData)
+  // console.log(rawData)
 
 }
 
-fetch("https://lichess.org/api/games/user/german11?max=100", options).then(readStream(onGame)).then(console.log(rawData));
+fetch("https://lichess.org/api/games/user/german11?max=10", options).then(readStream(onGame))
 
+const makeGraph = () => {
+  console.log(Object.entries(rawData))
+  const filteredData = Object.entries(rawData).filter(x => x[1].games >= config.minVsGame
+  );
+  console.log(filteredData)
+  let playerNodes = new Set();
+  console.log(playerNodes);
+  filteredData.forEach(x => x[0].split('-').forEach(x => playerNodes.add(x)));
+  let playerLinks = filteredData.map(x => {
+    let players = x[0].split('-');
+    return {
+      "source": players[0],
+      "target": players[1],
+    }
+  });
+  playerNodes = [...playerNodes].map(x => {return {"id": x}});
+  console.log(playerNodes)
+  return {
+    "nodes": playerNodes,
+    "links": playerLinks
+  }
+}
 
 let forceProperties = {
     center: {
@@ -177,8 +199,14 @@ let forceProperties = {
 // force simulator
 let simulation = d3.forceSimulation();
 
-initializeDisplay();
-initializeSimulation();
+
+const restart = () => {
+  let graph = makeGraph();
+  console.log("graph", graph);
+  initializeDisplay(graph);
+  initializeSimulation(graph);
+}
+
 
 
 //////////// FORCE SIMULATION //////////// 
@@ -186,9 +214,10 @@ initializeSimulation();
 
 
 // set up the simulation and event to update locations after each tick
-function initializeSimulation() {
+function initializeSimulation(graph) {
   simulation.nodes(graph.nodes);
   initializeForces();
+  updateForces(graph);
   simulation.on("tick", ticked);
 }
 // add forces to the simulation
@@ -200,11 +229,10 @@ function initializeForces() {
         .force("collide", d3.forceCollide())
         .force("center", d3.forceCenter());
     // apply properties to each of the forces
-    updateForces();
 }
 
 // apply new force properties
-function updateForces() {
+function updateForces(graph) {
     // get each force by name and update the properties
     simulation.force("center")
         .x(width * forceProperties.center.x)
@@ -233,8 +261,9 @@ function updateForces() {
 //////////// DISPLAY ////////////
 
 // generate the svg objects and force simulation
-function initializeDisplay() {
+function initializeDisplay(graph) {
   // set the data and properties of link lines
+  console.log("graph init", graph)
   link = svg.append("g")
         .attr("class", "links")
     .selectAll("line")
