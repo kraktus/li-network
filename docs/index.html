@@ -49,8 +49,8 @@ svg {
   </div>
   <div class="force">
     <label><strong>Api</strong>
-      <label><input type="text", id="LichessId", autocomplete="off", oninput="config.LichessId=value; restart()">Lichess username</label>
-      <label><input type="submit", onclick='restart()'>Start searching</label>
+      <label><input type="text", id="LichessId", autocomplete="off">Lichess username</label>
+      <label><input type="submit", onclick="config.LichessId=document.getElementById('minVsGame').value; startApi()">Start searching</label>
     </label>
   </div>
 
@@ -58,6 +58,8 @@ svg {
     <label><strong onload="minVsGame.value = config.minVsGame">Display</strong>
       <output id="minVsGame"></output>
       <input type="range" min="1" max="20" value="2" step="1" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
+    </label>
+    <label><input type="submit", onclick="restart()">Display</label>
     </label>
   </div>
 
@@ -102,7 +104,8 @@ const readStream = processLine => response => {
       if (done) {
         if (buf.length > 0) processLine(JSON.parse(buf));
         console.log("DONE")
-        chooseNewPlayerDl() // hacky, should be a parameter of `readStream`
+        chooseNewPlayerDl(); // hacky, should be a parameter of `readStream`
+        startApi() // start-over!
       } else {
         const chunk = decoder.decode(value, {
           stream: true
@@ -141,7 +144,7 @@ const onGame = game => {
   } else if (game.winner == players[0][1]) {
     score = 1
   }
-  //console.log(score)
+  //console.log("createdAt", game.createdAt)
   let playerLink = rawData[`${players[0][0].user.id}-${players[1][0].user.id}`]
   if (playerLink == undefined) {
     playerLink = {}
@@ -155,12 +158,12 @@ const onGame = game => {
   }
   rawData[`${players[0][0].user.id}-${players[1][0].user.id}`] = playerLink
 }
-fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}`, options).then(readStream(onGame))
 
 const makeGraph = () => {
+
   const filteredData = Object.entries(rawData).filter(x => x[1].games >= config.minVsGame
   );
-  console.log(filteredData)
+  console.log("filteredData", filteredData)
   let playerNodes = new Set();
   console.log(playerNodes);
   filteredData.forEach(x => x[0].split('-').forEach(x => playerNodes.add(x)));
@@ -188,7 +191,7 @@ let forceProperties = {
     },
     charge: {
         enabled: true,
-        strength: -30,
+        strength: -20,
         distanceMin: 1,
         distanceMax: 2000
     },
@@ -208,14 +211,18 @@ let forceProperties = {
 let simulation = d3.forceSimulation();
 
 const chooseNewPlayerDl = () => {
-  console.log(dlPlayers);
-  const playerId = Object.entries(dlPlayers.involvement).sort(x => x[1]).map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0]
-  return playerId
+  console.log("dlPlayers", Object.entries(dlPlayers.involvement).sort(x => -x[1]));
+  const playerId = Object.entries(dlPlayers.involvement);
+  playerId.sort((a, b) => -a[1] > -b[1]);
+  console.log("playerIds", playerId);
+  config.lichessId = playerId.map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0]
 }
 
 const startApi = () => {
   dlPlayers.alreadyDl.add(config.lichessId);
-  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}`, options).then(readStream(onGame, startApi));
+  console.log("player searching", config.lichessId);
+  console.log(dlPlayers.alreadyDl.has("german11"));
+  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}`, options).then(readStream(onGame));
 }
 
 const restart = () => {
@@ -282,7 +289,7 @@ function updateForces(graph) {
 // generate the svg objects and force simulation
 function initializeDisplay(graph) {
   // set the data and properties of link lines
-  // console.log("graph init", graph)
+  console.log("graph init", graph)
   link = svg.append("g")
         .attr("class", "links")
     .selectAll("line")
