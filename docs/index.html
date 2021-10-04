@@ -52,7 +52,7 @@ svg {
   </div>
   <div class="force">
     <label><input type="text", id="LichessId">Lichess username</label>
-    <label><input type="submit">Start searching</label>
+    <label><input type="submit", onclick='fetch("https://lichess.org/api/games/user/german11", options).then(readStream(xx));'>Start searching</label>
   </div>
 
 </div>
@@ -78,12 +78,60 @@ const graph = {
 
   ]
 }
-// d3.json(miserable, function(error, _graph) {
-//   if (error) throw error;
-//   graph = _graph;
-//   initializeDisplay();
-//   initializeSimulation();
-// });
+
+let config = {
+  lichessId: "",
+  maxGame: 100,
+  minVsGame: 2,
+}
+
+const readStream = processLine => response => {
+  console.log(processLine, response)
+  const stream = response.body.getReader();
+  const matcher = /\r?\n/;
+  const decoder = new TextDecoder();
+  let buf = '';
+  console.log(processLine, response)
+
+  const loop = () =>
+    stream.read().then(({ done, value }) => {
+      if (done) {
+        if (buf.length > 0) processLine(JSON.parse(buf));
+      } else {
+        const chunk = decoder.decode(value, {
+          stream: true
+        });
+        buf += chunk;
+
+        const parts = buf.split(matcher);
+        buf = parts.pop();
+        for (const i of parts.filter(p => p)) processLine(JSON.parse(i));
+        return loop();
+      }
+    });
+
+  return loop();
+}
+
+const headers = new Headers({
+    "accept": "application/x-ndjson"
+});
+const options = {
+    headers: headers,
+}
+
+const onGame = game => {
+  // sorted alphabetically
+  let players = [game.players.white, game.players.black].sort((a, b) => a.user.id.localeCompare(b.user.id));
+  console.log(players)
+  // store the outcome compared to the first player
+
+}
+
+fetch("https://lichess.org/api/games/user/german11?max=10", options).then(readStream(onGame));
+
+//fetch("https://lichess.org/api/games/user/german11", options).then(readStream(xx));
+
 svg.data(graph)
 let forceProperties = {
     center: {
