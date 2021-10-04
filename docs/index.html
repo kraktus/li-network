@@ -49,7 +49,7 @@ svg {
   </div>
   <div class="force">
     <label><strong>Api</strong>
-      <label><input type="text", id="lichessId", autocomplete="off">Lichess username</label>
+      <label><input type="text", id="lichessId", autocomplete="off" value="german11">Lichess username</label>
       <label><input type="submit", onclick="config.lichessId=document.getElementById('lichessId').value; startApi()">Start searching</label>
     </label>
   </div>
@@ -57,9 +57,10 @@ svg {
   <div class="force">
     <label><strong onload="minVsGame.value = config.minVsGame">Display</strong>
       <output id="minVsGame"></output>
-      <input type="range" min="1" max="20" value="2" step="1" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
+      <input type="range" min="1" max="20" step="1" id="minVsGameInput" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
     </label>
     <label><input type="submit", onclick="restart()">Display</label>
+    <label><input type="checkbox", id="refresh" onclick="config.refresh=this.checked; console.log('refresh', config.refresh)"">Refresh</label>
     </label>
   </div>
 
@@ -87,9 +88,11 @@ let config = {
   lichessId: "",
   maxGame: 100,
   minVsGame: 2,
+  refresh: true,
 }
 
-//not working: document.getElementById("minVsGame").value = config.minVsGame
+document.getElementById("minVsGameInput").value = config.minVsGame
+document.getElementById("refresh").checked = config.refresh
 d3.select('#minVsGame').text(config.minVsGame)
 
 
@@ -132,7 +135,8 @@ const options = {
 const onGame = game => {
   // sorted alphabetically
   const players = [[game.players.white, "white"], [game.players.black, "black"]]
-  .sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
+  .sort((a, b) => {console.log(b);
+    return a[0].user.id.localeCompare(b[0].user.id)});
   players.forEach(p => {
    let id = p[0].user.id;
    dlPlayers.involvement[id] = (dlPlayers.involvement[id] || 0) + 1;
@@ -222,7 +226,7 @@ const startApi = () => {
   dlPlayers.alreadyDl.add(config.lichessId);
   console.log("player searching", config.lichessId);
   console.log(dlPlayers.alreadyDl.has("german11"));
-  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}`, options).then(readStream(onGame));
+  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&moves=false&tags=false`, options).then(readStream(onGame));
 }
 
 const restart = () => {
@@ -232,7 +236,7 @@ const restart = () => {
   initializeSimulation(graph);
   initializeDisplay(graph);
 }
-
+setInterval(() => {if (config.refresh) {console.log("ref", config.refresh); restart()}}, 2000);
 
 
 //////////// FORCE SIMULATION //////////// 
