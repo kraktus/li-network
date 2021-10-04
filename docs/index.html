@@ -52,14 +52,14 @@ svg {
   </div>
   <div class="force">
     <label><input type="text", id="LichessId">Lichess username</label>
-    <label><input type="submit", onclick='fetch("https://lichess.org/api/games/user/german11", options).then(readStream(xx));'>Start searching</label>
+    <label><input type="submit", onclick=''>Start searching</label>
   </div>
 
 </div>
 <svg></svg>
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script>
-let svg = d3.select("svg"),
+const svg = d3.select("svg"),
     width = +svg.node().getBoundingClientRect().width,
     height = +svg.node().getBoundingClientRect().height;
 
@@ -79,6 +79,8 @@ const graph = {
   ]
 }
 
+const rawData = {}
+
 let config = {
   lichessId: "",
   maxGame: 100,
@@ -86,13 +88,10 @@ let config = {
 }
 
 const readStream = processLine => response => {
-  console.log(processLine, response)
   const stream = response.body.getReader();
   const matcher = /\r?\n/;
   const decoder = new TextDecoder();
   let buf = '';
-  console.log(processLine, response)
-
   const loop = () =>
     stream.read().then(({ done, value }) => {
       if (done) {
@@ -122,17 +121,36 @@ const options = {
 
 const onGame = game => {
   // sorted alphabetically
-  let players = [game.players.white, game.players.black].sort((a, b) => a.user.id.localeCompare(b.user.id));
+  const players = [[game.players.white, "white"], [game.players.black, "black"]]
+  .sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
   console.log(players)
   // store the outcome compared to the first player
+  let score = 0
+  if (game.winner == undefined) {
+    score = 0.5
+  } else if (game.winner == players[0][1]) {
+    score = 1
+  }
+  console.log(score)
+  let playerLink = rawData[`${players[0][0].user.id}-${players[1][0].user.id}`]
+  if (playerLink == undefined) {
+    playerLink = {}
+    playerLink.games = 1
+    playerLink.score = score
+    playerLink.createdAt = game.createdAt
+  } else if (playerLink.createdAt > game.createdAt){
+    playerLink.games += 1
+    playerLink.score += score
+    playerLink.createdAt = game.createdAt
+  }
+  rawData[`${players[0][0].user.id}-${players[1][0].user.id}`] = playerLink
+  console.log(rawData)
 
 }
 
-fetch("https://lichess.org/api/games/user/german11?max=10", options).then(readStream(onGame));
+fetch("https://lichess.org/api/games/user/german11?max=100", options).then(readStream(onGame)).then(console.log(rawData));
 
-//fetch("https://lichess.org/api/games/user/german11", options).then(readStream(xx));
 
-svg.data(graph)
 let forceProperties = {
     center: {
         x: 0.5,
