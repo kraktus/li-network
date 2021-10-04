@@ -265,7 +265,9 @@ function initializeDisplay(graph) {
     .on("click", d => {
       console.log(d.source);
       window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}`, "_blank")});
-    // 
+
+  link.append("title")
+      .text(d => `${d.source.id}: ${d.score}/${d.games}`);
 
   // set the data and properties of node circles
   node = svg.append("g")
@@ -288,7 +290,7 @@ function initializeDisplay(graph) {
 
 // update the display based on the forces (but not positions)
 function updateDisplay() {
-  const colors  = d3.scaleLinear().domain([0,500]).range(["grey", "red"])
+  const colors  = d3.scaleLinear().domain([0,50]).range(["grey", "red"])
 
     node
         .attr("r", forceProperties.collide.radius)
@@ -305,10 +307,10 @@ function updateDisplay() {
 // update the display positions after each simulation tick
 function ticked() {
     link
-        .attr("x1", function(d) { return d.source.x; })
-        .attr("y1", function(d) { return d.source.y; })
-        .attr("x2", function(d) { return d.target.x; })
-        .attr("y2", function(d) { return d.target.y; });
+        .attr("x1", d => d.source.x)
+        .attr("y1", d => d.source.y)
+        .attr("x2", d => d.target.x)
+        .attr("y2", d => d.target.y);
 
     node
         .attr("cx", function(d) { return d.x; })
