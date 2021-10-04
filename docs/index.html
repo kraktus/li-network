@@ -297,7 +297,7 @@ function initializeDisplay(graph) {
 
 // update the display based on the forces (but not positions)
 function updateDisplay() {
-  const colors  = d3.scaleLinear().domain([0,0.5]).range(["grey", "red"])
+  const colors  = d3.scaleLinear().domain([0,500]).range(["grey", "red"])
 
     node
         .attr("r", forceProperties.collide.radius)
@@ -306,7 +306,7 @@ function updateDisplay() {
 
     link
         .attr("stroke-width", d => d.games)
-        .attr("stroke", d => colors(Math.abs(d.games - d.score)/d.games))
+        .attr("stroke", d => colors(Math.abs(d.games - d.score)/d.games*100))
         .attr("opacity", forceProperties.link.enabled ? 1 : 0);
     console.log(node, link)
 }
