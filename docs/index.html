@@ -89,7 +89,7 @@ const rawData = {};
 // list players we already downloaded games from, and keep track of the "involvement" of a player in the network (i.e number of games played).
 let dlPlayers = {
   alreadyDl: new Set(),
-  involvement: {}
+  nodes: {}
 }
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -183,7 +183,8 @@ const onGame = game => {
   // update players' involvment
   players.forEach(p => {
    let id = p[0].user.id;
-   dlPlayers.involvement[id] = (dlPlayers.involvement[id] || 0) + 1;
+   dlPlayers.nodes[id] = (dlPlayers.nodes[id] || {"involvement": 0, "status": undefined});
+   dlPlayers.nodes[id].involvement += 1;
   });
   if (playerLink == undefined) {
     playerLink = {}
@@ -198,6 +199,16 @@ const onGame = game => {
     playerLink.plies += plies
   }
   rawData[`${players[0][0].user.id}/${players[1][0].user.id}`] = playerLink
+}
+
+const getStatus = (playersList) => {
+
+  fetch("https://lichess.org/api/users", {
+    method: 'POST',
+    body: playersList.join(",")
+  }).then(res => {
+    res.map(user => dl)
+  })
 }
 
 const makeGraph = () => {
@@ -253,8 +264,8 @@ let simulation = d3.forceSimulation();
 
 const chooseNewPlayerDl = () => {
   console.log("dlPlayers", dlPlayers);
-  const playerId = Object.entries(dlPlayers.involvement);
-  playerId.sort((a, b) => -a[1] > -b[1]);
+  const playerId = Object.entries(dlPlayers.nodes);
+  playerId.sort((a, b) => -a[1].involvement > -b[1].involvement);
   console.log("playerIds", playerId);
   config.lichessId = playerId.map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0]
 }
@@ -368,7 +379,7 @@ function updateDisplay() {
 
     node
         .attr("r", forceProperties.collide.radius)
-        .attr("stroke", d => (d.id == config.lichessId) ? "blue" : "grey")
+        .attr("stroke", d => (d.id == config.lichessId) ? "blue" : "green")
         .attr("stroke-width", 10);
 
     link
