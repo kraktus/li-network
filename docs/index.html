@@ -177,7 +177,7 @@ const onGame = game => {
   // sanity check, look if we've already treated the game
   // do NOT change state of a global before
   if ((playerLink?.createdAt || game.createdAt) < game.createdAt) {
-    console.log("SKIPPING", playerLink?.createdAt, game.createdAt)
+    //console.log("SKIPPING", playerLink?.createdAt, game.createdAt)
     return
   }
   // update players' involvment
@@ -202,13 +202,36 @@ const onGame = game => {
 }
 
 const getStatus = (playersList) => {
-
+  console.log("join", playersList.join());
   fetch("https://lichess.org/api/users", {
     method: 'POST',
-    body: playersList.join(",")
-  }).then(res => {
-    res.map(user => dl)
+    body: playersList.join()
+  }).then(r => r.json()).then(res => {
+    res.map(user => {
+      console.log("user api status", user)
+      if (user.disabled) {
+        dlPlayers.nodes[user.id].status = "disabled"
+      } else if (user.tosViolation) {
+        dlPlayers.nodes[user.id].status = "tos"
+      } else {
+        dlPlayers.nodes[user.id].status = "good"
+      }})
   })
+}
+
+fetch("https://lichess.org/api/users", {
+    method: 'POST',
+    body: "german11, german13",
+  }).then(console.log)
+
+const chunkArray = (myArray, chunk_size) => {
+    let index = 0;
+    let buf = []; 
+    for (index = 0; index < myArray.length; index += chunk_size) {
+        myChunk = myArray.slice(index, index+chunk_size);
+        buf.push(myChunk);
+    }
+    return buf
 }
 
 const makeGraph = () => {
@@ -228,10 +251,14 @@ const makeGraph = () => {
       "score": x[1].score
     }
   });
-  playerNodes = [...playerNodes].map(x => {return {"id": x}});
+  playerNodes = [...playerNodes];
   console.log(playerNodes)
+  // get user status
+  const usersWithoutStatus = playerNodes.filter(x => dlPlayers.nodes[x].status === undefined);
+  console.log("usersWithoutStatus chunked", chunkArray(usersWithoutStatus, 300));
+  chunkArray(usersWithoutStatus, 300).map(getStatus);
   return {
-    "nodes": playerNodes,
+    "nodes": playerNodes.map(x => {return {"id": x, "status": dlPlayers.nodes[x].status}}),
     "links": playerLinks
   }
 }
@@ -379,7 +406,18 @@ function updateDisplay() {
 
     node
         .attr("r", forceProperties.collide.radius)
-        .attr("stroke", d => (d.id == config.lichessId) ? "blue" : "green")
+        .attr("stroke", d => {
+          if (d.id == config.lichessId) {
+            return "blue"
+          };
+          switch (d.status) {
+            case "tos": return "red";
+            case "disabled": return "black";
+            case "good": return "green";
+            case undefined: return "grey";
+            }
+          }
+          )
         .attr("stroke-width", 10);
 
     link
