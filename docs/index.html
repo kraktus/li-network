@@ -163,10 +163,6 @@ const onGame = game => {
   //console.log("game", game)
   const players = [[game.players.white, "white"], [game.players.black, "black"]]
   .sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
-  players.forEach(p => {
-   let id = p[0].user.id;
-   dlPlayers.involvement[id] = (dlPlayers.involvement[id] || 0) + 1;
-  });
   // store the outcome compared to the first player
   let score = 0;
   const plies = game.moves.split(" ").length
@@ -178,13 +174,24 @@ const onGame = game => {
   }
   //console.log("createdAt", game.createdAt)
   let playerLink = rawData[`${players[0][0].user.id}-${players[1][0].user.id}`]
+  // sanity check, look if we've already treated the game
+  // do NOT change state of a global before
+  if ((playerLink?.createdAt || game.createdAt) < game.createdAt) {
+    console.log("SKIPPING", playerLink?.createdAt, game.createdAt)
+    return
+  }
+  // update players' involvment
+  players.forEach(p => {
+   let id = p[0].user.id;
+   dlPlayers.involvement[id] = (dlPlayers.involvement[id] || 0) + 1;
+  });
   if (playerLink == undefined) {
     playerLink = {}
     playerLink.games = 1
     playerLink.score = score
     playerLink.createdAt = game.createdAt
     playerLink.plies = plies
-  } else if (playerLink.createdAt > game.createdAt){
+  } else {
     playerLink.games += 1
     playerLink.score += score
     playerLink.createdAt = game.createdAt
