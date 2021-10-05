@@ -98,9 +98,9 @@ let config = {
   lichessId: urlParams.get("user") || "german11",
   maxGame: 100,
   minVsGame: 2,
-  refresh: true,
+  refresh: false,
   search: false,
-  maxMeanPlies: 20,
+  maxMeanPlies: 100,
 }
 
 document.getElementById("lichessId").value = config.lichessId
@@ -245,7 +245,7 @@ let forceProperties = {
 let simulation = d3.forceSimulation();
 
 const chooseNewPlayerDl = () => {
-  console.log("dlPlayers", Object.entries(dlPlayers.involvement).sort(x => -x[1]));
+  console.log("dlPlayers", dlPlayers);
   const playerId = Object.entries(dlPlayers.involvement);
   playerId.sort((a, b) => -a[1] > -b[1]);
   console.log("playerIds", playerId);
@@ -253,9 +253,8 @@ const chooseNewPlayerDl = () => {
 }
 
 const startApi = () => {
-  dlPlayers.alreadyDl.add(config.lichessId);
+  dlPlayers.alreadyDl.add(config.lichessId.toLowerCase());
   console.log("player searching", config.lichessId);
-  console.log(dlPlayers.alreadyDl.has("german11"));
   fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&tags=false`, options).then(readStream(onGame));
 }
 
