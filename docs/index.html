@@ -49,8 +49,8 @@ svg {
   </div>
   <div class="force">
     <label><strong>Api</strong>
-      <label><input type="text", id="lichessId", autocomplete="off" value="german11">Lichess username</label>
-      <label><input type="submit", onclick="config.lichessId=document.getElementById('lichessId').value; startApi()">Start searching</label>
+      <label><input type="text" id="lichessId" autocomplete="off" value="german11">Lichess username</label>
+      <label><input type="checkbox" id="search" onclick="if (this.checked) {config.lichessId=document.getElementById('lichessId').value; startApi()}; config.search = this.checked;">Search</label>
     </label>
   </div>
 
@@ -60,7 +60,7 @@ svg {
       <input type="range" min="1" max="20" step="1" id="minVsGameInput" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
     </label>
     <label><input type="submit", onclick="restart()">Display</label>
-    <label><input type="checkbox", id="refresh" onclick="config.refresh=this.checked; console.log('refresh', config.refresh)"">Refresh</label>
+    <label><input type="checkbox", id="refresh" onclick="config.refresh=this.checked; console.log('refresh', config.refresh)">Refresh</label>
     </label>
   </div>
 
@@ -89,9 +89,11 @@ let config = {
   maxGame: 100,
   minVsGame: 2,
   refresh: true,
+  search: false,
 }
 
 document.getElementById("minVsGameInput").value = config.minVsGame
+document.getElementById("minVsGameInput").checked = config.search
 document.getElementById("refresh").checked = config.refresh
 d3.select('#minVsGame').text(config.minVsGame)
 
@@ -104,6 +106,9 @@ const readStream = processLine => response => {
   const loop = () =>
     stream.read().then(({ done, value }) => {
       //console.log(done, value)
+      if (!config.search) {
+        return
+      }
       if (done) {
         if (buf.length > 0) processLine(JSON.parse(buf));
         console.log("DONE")
@@ -331,7 +336,7 @@ function updateDisplay() {
 
     node
         .attr("r", forceProperties.collide.radius)
-        .attr("stroke", "grey")
+        .attr("stroke", d => (d.id == config.lichessId) ? "blue" : "grey")
         .attr("stroke-width", 10);
 
     link
