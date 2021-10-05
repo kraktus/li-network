@@ -49,7 +49,7 @@ svg {
   </div>
   <div class="force">
     <label><strong>Api</strong>
-      <label><input type="text" id="lichessId" autocomplete="off" value="german11">Lichess username</label>
+      <label><input type="text" id="lichessId" autocomplete="off">Lichess username</label>
       <br></br>
       <div>Max number of games fetched by player</div>
       <output id="maxGame"></output>
@@ -65,6 +65,10 @@ svg {
       <output id="minVsGame"></output>
       <input type="range" min="1" max="20" step="1" id="minVsGameInput" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
     </label>
+    <br></br>
+      <div>Minimum number of games played against each other to be displayed</div>
+      <output id="maxMeanPlies"></output>
+      <input type="range" min="1" max="200" step="1" id="maxMeanPliesInput" oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();">
     <label><input type="checkbox", id="refresh" onclick="config.refresh=this.checked; console.log('refresh', config.refresh)">Refresh</label>
     </label>
   </div>
@@ -88,20 +92,27 @@ let dlPlayers = {
   involvement: {}
 }
 
+const urlParams = new URLSearchParams(window.location.search);
 
 let config = {
-  lichessId: "",
+  lichessId: urlParams.get("user") || "german11",
   maxGame: 100,
   minVsGame: 2,
   refresh: true,
   search: false,
+  maxMeanPlies: 20,
 }
+
+document.getElementById("lichessId").value = config.lichessId
 
 document.getElementById("maxGameInput").value = config.maxGame
 d3.select('#maxGame').text(config.maxGame)
 
 document.getElementById("minVsGameInput").value = config.minVsGame
 d3.select('#minVsGame').text(config.minVsGame)
+
+document.getElementById("maxMeanPliesInput").value = config.maxMeanPlies
+d3.select('#maxMeanPlies').text(config.maxMeanPlies)
 
 document.getElementById("search").checked = config.search
 document.getElementById("refresh").checked = config.refresh
@@ -149,15 +160,17 @@ const options = {
 
 const onGame = game => {
   // sorted alphabetically
+  //console.log("game", game)
   const players = [[game.players.white, "white"], [game.players.black, "black"]]
-  .sort((a, b) => {console.log(b);
-    return a[0].user.id.localeCompare(b[0].user.id)});
+  .sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
   players.forEach(p => {
    let id = p[0].user.id;
    dlPlayers.involvement[id] = (dlPlayers.involvement[id] || 0) + 1;
   });
   // store the outcome compared to the first player
-  let score = 0
+  let score = 0;
+  const plies = game.moves.split(" ").length
+  //console.log("plies", plies)
   if (game.winner == undefined) {
     score = 0.5
   } else if (game.winner == players[0][1]) {
@@ -170,21 +183,23 @@ const onGame = game => {
     playerLink.games = 1
     playerLink.score = score
     playerLink.createdAt = game.createdAt
+    playerLink.plies = plies
   } else if (playerLink.createdAt > game.createdAt){
     playerLink.games += 1
     playerLink.score += score
     playerLink.createdAt = game.createdAt
+    playerLink.plies += plies
   }
   rawData[`${players[0][0].user.id}-${players[1][0].user.id}`] = playerLink
 }
 
 const makeGraph = () => {
 
-  const filteredData = Object.entries(rawData).filter(x => x[1].games >= config.minVsGame
+  const filteredData = Object.entries(rawData).filter(x => x[1].games >= config.minVsGame && x[1].plies / x[1].games <= config.maxMeanPlies
   );
-  console.log("filteredData", filteredData)
+  //console.log("filteredData", filteredData)
   let playerNodes = new Set();
-  console.log(playerNodes);
+  //console.log(playerNodes);
   filteredData.forEach(x => x[0].split('-').forEach(x => playerNodes.add(x)));
   let playerLinks = filteredData.map(x => {
     let players = x[0].split('-');
@@ -241,7 +256,7 @@ const startApi = () => {
   dlPlayers.alreadyDl.add(config.lichessId);
   console.log("player searching", config.lichessId);
   console.log(dlPlayers.alreadyDl.has("german11"));
-  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&moves=false&tags=false`, options).then(readStream(onGame));
+  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&tags=false`, options).then(readStream(onGame));
 }
 
 const restart = () => {
