@@ -209,10 +209,10 @@ const getStatus = (playersList) => {
   }).then(r => r.json()).then(res => {
     res.map(user => {
       console.log("user api status", user)
-      if (user.disabled) {
-        dlPlayers.nodes[user.id].status = "disabled"
-      } else if (user.tosViolation) {
+      if (user.tosViolation) {
         dlPlayers.nodes[user.id].status = "tos"
+      } else if (user.disabled) {
+        dlPlayers.nodes[user.id].status = "disabled"
       } else {
         dlPlayers.nodes[user.id].status = "good"
       }})
@@ -411,7 +411,7 @@ function updateDisplay() {
             return "blue"
           };
           switch (d.status) {
-            case "tos": return "red";
+            case "tos": return "orange";
             case "disabled": return "black";
             case "good": return "green";
             case undefined: return "grey";
