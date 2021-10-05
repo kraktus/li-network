@@ -375,7 +375,7 @@ function initializeDisplay(graph) {
     .enter().append("line")
     .on("click", d => {
       //console.log(d.source);
-      window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}&rated=true`, "_blank")});
+      window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}&mode=1`, "_blank")});
 
   link.append("title")
       .text(d => `${d.source.id}: ${d.score}/${d.games}`);
