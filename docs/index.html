@@ -173,7 +173,7 @@ const onGame = game => {
     score = 1
   }
   //console.log("createdAt", game.createdAt)
-  let playerLink = rawData[`${players[0][0].user.id}-${players[1][0].user.id}`]
+  let playerLink = rawData[`${players[0][0].user.id}/${players[1][0].user.id}`]
   // sanity check, look if we've already treated the game
   // do NOT change state of a global before
   if ((playerLink?.createdAt || game.createdAt) < game.createdAt) {
@@ -197,7 +197,7 @@ const onGame = game => {
     playerLink.createdAt = game.createdAt
     playerLink.plies += plies
   }
-  rawData[`${players[0][0].user.id}-${players[1][0].user.id}`] = playerLink
+  rawData[`${players[0][0].user.id}/${players[1][0].user.id}`] = playerLink
 }
 
 const makeGraph = () => {
@@ -207,9 +207,9 @@ const makeGraph = () => {
   //console.log("filteredData", filteredData)
   let playerNodes = new Set();
   //console.log(playerNodes);
-  filteredData.forEach(x => x[0].split('-').forEach(x => playerNodes.add(x)));
+  filteredData.forEach(x => x[0].split('/').forEach(x => playerNodes.add(x)));
   let playerLinks = filteredData.map(x => {
-    let players = x[0].split('-');
+    let players = x[0].split('/');
     return {
       "source": players[0],
       "target": players[1],
@@ -337,7 +337,7 @@ function initializeDisplay(graph) {
     .enter().append("line")
     .on("click", d => {
       //console.log(d.source);
-      window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}`, "_blank")});
+      window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}&rated=true`, "_blank")});
 
   link.append("title")
       .text(d => `${d.source.id}: ${d.score}/${d.games}`);
@@ -345,18 +345,19 @@ function initializeDisplay(graph) {
   // set the data and properties of node circles
   node = svg.append("g")
         .attr("class", "nodes")
-    .selectAll("circle")
+    .selectAll("nodes")
     .data(graph.nodes)
     .enter().append("circle")
         .call(d3.drag()
             .on("start", dragstarted)
             .on("drag", dragged)
             .on("end", dragended))
-        .on("click", d => window.open(`https://lichess.org/@/${d.id}`, "_blank"))
+        .on("click", d => window.open(`https://lichess.org/@/${d.id}`, "_blank"));
 
   // node tooltip
   node.append("title")
       .text(d => d.id);
+
   // visualize the graph
   updateDisplay();
 }
