@@ -103,6 +103,8 @@ let config = {
   maxMeanPlies: 100,
 }
 
+let originalIdSearched;
+
 document.getElementById("lichessId").value = config.lichessId
 
 document.getElementById("maxGameInput").value = config.maxGame
@@ -298,6 +300,7 @@ const chooseNewPlayerDl = () => {
 }
 
 const startApi = () => {
+  originalIdSearched = originalIdSearched || config.lichessId.toLowerCase();
   dlPlayers.alreadyDl.add(config.lichessId.toLowerCase());
   console.log("player searching", config.lichessId);
   fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&tags=false`, options).then(readStream(onGame));
@@ -407,7 +410,7 @@ function updateDisplay() {
     node
         .attr("r", forceProperties.collide.radius)
         .attr("stroke", d => {
-          if (d.id == config.lichessId) {
+          if (d.id == originalIdSearched) {
             return "blue"
           };
           switch (d.status) {
