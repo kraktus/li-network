@@ -134,7 +134,7 @@
           oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();"
         />
         <br />
-        <div>Maximum number of games played per account (original/closed accounts immune)</div>
+        <div>Maximum number of games played, for the account with the least games in the match. (original/closed accounts immune)</div>
         <input
           type="checkbox"
           ,
@@ -221,7 +221,6 @@
             }
             if (done) {
               if (buf.length > 0) processLine(JSON.parse(buf));
-              console.log('DONE');
               chooseNewPlayerDl(); // hacky, should be a parameter of `readStream`
               startApi(); // start-over!
             } else {
@@ -293,7 +292,6 @@
       };
 
       const getInfo = playersList => {
-        console.log('join', playersList.join());
         fetch('https://lichess.org/api/users', {
           method: 'POST',
           body: playersList.join(),
@@ -356,18 +354,17 @@
         //console.log(playerNodes);
         // get user status and number of games
         const usersWithoutInfo = playerNodes.filter(x => dlPlayers.nodes[x].status === undefined);
-        console.log('usersWithoutInfo chunked', chunkArray(usersWithoutInfo, 300));
+        //console.log('usersWithoutInfo chunked', chunkArray(usersWithoutInfo, 300));
         chunkArray(usersWithoutInfo, 300).forEach(getInfo);
         if (config.enableAccountSeniority) {
-          //console.log("TEST enableAccountSeniority before", playerNodes)
-          playerNodes = playerNodes.filter(x => {
-            //console.log("seniority check", x, dlPlayers.nodes[x], dlPlayers.nodes[x].games <= config.accountSeniority);
-            return dlPlayers.nodes[x].games <= config.accountSeniority || originalIdSearched == x
-          })
-          // now we need to filter links too
-          const playersNewEnough = new Set(playerNodes);
-          playerLinks = playerLinks.filter(x => playersNewEnough.has(x.source) && playersNewEnough.has(x.target))
-          //console.log("after", playerNodes)
+          const playersNewEnough = new Set(playerNodes.filter(
+            x => dlPlayers.nodes[x].games <= config.accountSeniority || originalIdSearched == x
+          ))
+          // now we need to filter links too. If one of the account in the link is young enough, let it be.
+          playerLinks = playerLinks.filter(x => playersNewEnough.has(x.source) || playersNewEnough.has(x.target))
+
+          // now recompute nodes again
+          playerNodes = [...new Set(playerLinks.flatMap(x => [x.source, x.target]))];
         }
         return {
           nodes: playerNodes.map(x => {
@@ -404,10 +401,10 @@
       let simulation = d3.forceSimulation();
 
       const chooseNewPlayerDl = () => {
-        console.log('dlPlayers', dlPlayers);
+        //console.log('dlPlayers', dlPlayers);
         const playerId = Object.entries(dlPlayers.nodes);
         playerId.sort((a, b) => -a[1].involvement > -b[1].involvement);
-        console.log('playerIds', playerId);
+        //console.log('playerIds', playerId);
         config.lichessId = playerId.map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0];
       };
 
@@ -430,7 +427,6 @@
       };
       setInterval(() => {
         if (config.refresh) {
-          console.log('ref', config.refresh);
           restart();
         }
       }, 2000);
@@ -489,7 +485,7 @@
       // generate the svg objects and force simulation
       function initializeDisplay(graph) {
         // set the data and properties of link lines
-        console.log("graph init", graph)
+        //console.log("graph init", graph)
         link = svg
           .append('g')
           .attr('class', 'links')
@@ -564,7 +560,7 @@
           .attr('stroke-width', d => d.games)
           .attr('stroke', d => colors(Math.abs(d.score / d.games - 0.5) * 100))
           .attr('opacity', forceProperties.link.enabled ? 1 : 0);
-        console.log(node, link);
+        //console.log(node, link);
       }
 
       // update the display positions after each simulation tick
