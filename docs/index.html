@@ -50,7 +50,7 @@ svg {
   <div class="force">
     <label><strong>Api</strong>
       <label><input type="text" id="lichessId" autocomplete="off">Lichess username</label>
-      <br></br>
+      <br>
       <div>Max number of games fetched by player</div>
       <output id="maxGame"></output>
       <input type="range" min="10" max="1000" step="10" id="maxGameInput" oninput="d3.select('#maxGame').text(value); config.maxGame=value">
@@ -60,12 +60,12 @@ svg {
 
   <div class="force">
     <label><strong onload="minVsGame.value = config.minVsGame">Display</strong>
-      <br></br>
+      <br>
       <div>Minimum number of games played against each other to be displayed</div>
       <output id="minVsGame"></output>
       <input type="range" min="1" max="20" step="1" id="minVsGameInput" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
     </label>
-    <br></br>
+    <br>
       <div>Minimum number of games played against each other to be displayed</div>
       <output id="maxMeanPlies"></output>
       <input type="range" min="1" max="200" step="1" id="maxMeanPliesInput" oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();">
