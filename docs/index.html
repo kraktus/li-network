@@ -134,7 +134,7 @@
           oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();"
         />
         <br />
-        <div>Maximum number of games played per account (original node immune)</div>
+        <div>Maximum number of games played per account (original/closed accounts immune)</div>
         <input
           type="checkbox"
           ,
@@ -309,8 +309,13 @@
               } else {
                 dlPlayers.nodes[user.id].status = 'good';
               };
-              //console.log("perfsX", Object.keys(user.perfs).filter(x => !["puzzle", "storm", "streak", "racer"].includes(x)));
+              //console.log("perfsX", user, user.perfs);
+              try {
               dlPlayers.nodes[user.id].games = Object.keys(user.perfs).filter(x => !["puzzle", "storm", "streak", "racer"].includes(x)).map(perfT => user.perfs[perfT].games).reduce( (a, b) => a + b) // DEBUG .map(x=> {console.log(user.id, user.perfs,"games", x); return x})
+            } catch (e) {
+              dlPlayers.nodes[user.id].games = 0;
+              console.log("Error trying to count games of ", user.id, user)
+            }
             });
           });
       };
@@ -354,15 +359,15 @@
         console.log('usersWithoutInfo chunked', chunkArray(usersWithoutInfo, 300));
         chunkArray(usersWithoutInfo, 300).forEach(getInfo);
         if (config.enableAccountSeniority) {
-          console.log("TEST enableAccountSeniority before", playerNodes)
+          //console.log("TEST enableAccountSeniority before", playerNodes)
           playerNodes = playerNodes.filter(x => {
-            console.log("seniority check", x, dlPlayers.nodes[x], dlPlayers.nodes[x].games <= config.accountSeniority);
-            return dlPlayers.nodes[x].games <= config.accountSeniority
+            //console.log("seniority check", x, dlPlayers.nodes[x], dlPlayers.nodes[x].games <= config.accountSeniority);
+            return dlPlayers.nodes[x].games <= config.accountSeniority || originalIdSearched == x
           })
           // now we need to filter links too
           const playersNewEnough = new Set(playerNodes);
           playerLinks = playerLinks.filter(x => playersNewEnough.has(x.source) && playersNewEnough.has(x.target))
-          console.log("after", playerNodes)
+          //console.log("after", playerNodes)
         }
         return {
           nodes: playerNodes.map(x => {
