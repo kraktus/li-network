@@ -133,14 +133,20 @@
           id="maxMeanPliesInput"
           oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();"
         />
-        <label
-          ><input
+        <br />
+          <input
+            type="checkbox"
+            ,
+            id="nodeLabels"
+            onclick="config.nodeLabels=this.checked; restart()"
+          />Show usernames
+          <div><input
             type="checkbox"
             ,
             id="refresh"
             onclick="config.refresh=this.checked; console.log('refresh', config.refresh)"
-          />Refresh</label
-        >
+          />Refresh
+        </div>
       </div>
     </div>
     <svg></svg>
@@ -170,11 +176,13 @@
         refresh: false,
         search: false,
         maxMeanPlies: 100,
+        nodeLabels: false,
       };
 
       let originalIdSearched;
 
       document.getElementById('lichessId').value = config.lichessId;
+      document.getElementById('nodeLabels').value = config.nodeLabels;
 
       document.getElementById('maxGameInput').value = config.maxGame;
       d3.select('#maxGame').text(config.maxGame);
@@ -483,6 +491,7 @@
         // node tooltip
         node.append('title').text(d => d.id);
 
+        if (config.nodeLabels) {
         text = svg
           .append('g')
           .selectAll('text')
@@ -492,6 +501,7 @@
           .attr('x', 10)
           .attr('y', '.31em')
           .text(d => d.id);
+        };
 
         // visualize the graph
         updateDisplay();
@@ -539,7 +549,9 @@
         //     .attr("cx", d =>  d.x)
         //     .attr("cy", d => d.y);
         node.attr('transform', transform);
-        text.attr('transform', transform);
+        if (config.nodeLabels) {
+          text.attr('transform', transform);
+        }
         d3.select('#alpha_value').style('flex-basis', simulation.alpha() * 100 + '%');
       }
 
