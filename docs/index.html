@@ -123,7 +123,7 @@
           />
         </label>
         <br />
-        <div>Minimum number of games played against each other to be displayed</div>
+        <div>Maximum number of moves played per game in average</div>
         <output id="maxMeanPlies"></output>
         <input
           type="range"
@@ -134,13 +134,26 @@
           oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();"
         />
         <br />
+        <div>Maximum number of games played per account (original node immune)</div>
+        <input
+          type="checkbox"
+          ,
+          id="enableAccountSeniority"
+          onclick="config.enableAccountSeniority=this.checked; restart()"
+        />Enable
+        <output id="accountSeniority"></output>
+        <input
+          type="range"
+          min="10"
+          max="1000"
+          step="10"
+          id="accountSeniorityInput"
+          oninput="d3.select('#accountSeniority').text(value); config.accountSeniority=value; restart();"
+        />
+        <br />
+        <input type="checkbox" , id="nodeLabels" onclick="config.nodeLabels=this.checked; restart()" />Show usernames
+        <div>
           <input
-            type="checkbox"
-            ,
-            id="nodeLabels"
-            onclick="config.nodeLabels=this.checked; restart()"
-          />Show usernames
-          <div><input
             type="checkbox"
             ,
             id="refresh"
@@ -174,6 +187,8 @@
         maxGame: 100,
         minVsGame: 2,
         refresh: false,
+        enableAccountSeniority: false,
+        accountSeniority: 200,
         search: false,
         maxMeanPlies: 100,
         nodeLabels: false,
@@ -187,6 +202,9 @@
       document.getElementById('maxGameInput').value = config.maxGame;
       d3.select('#maxGame').text(config.maxGame);
 
+      document.getElementById('accountSeniorityInput').value = config.accountSeniority;
+      d3.select('#accountSeniority').text(config.accountSeniority);
+
       document.getElementById('minVsGameInput').value = config.minVsGame;
       d3.select('#minVsGame').text(config.minVsGame);
 
@@ -194,6 +212,7 @@
       d3.select('#maxMeanPlies').text(config.maxMeanPlies);
 
       document.getElementById('search').checked = config.search;
+      document.getElementById('enableAccountSeniority').checked = config.enableAccountSeniority;
       document.getElementById('refresh').checked = config.refresh;
 
       const readStream = processLine => response => {
@@ -492,16 +511,16 @@
         node.append('title').text(d => d.id);
 
         if (config.nodeLabels) {
-        text = svg
-          .append('g')
-          .selectAll('text')
-          .data(graph.nodes)
-          .enter()
-          .append('text')
-          .attr('x', 10)
-          .attr('y', '.31em')
-          .text(d => d.id);
-        };
+          text = svg
+            .append('g')
+            .selectAll('text')
+            .data(graph.nodes)
+            .enter()
+            .append('text')
+            .attr('x', 10)
+            .attr('y', '.31em')
+            .text(d => d.id);
+        }
 
         // visualize the graph
         updateDisplay();
