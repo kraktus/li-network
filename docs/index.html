@@ -82,7 +82,7 @@ let svg = d3.select("svg"),
     height = +svg.node().getBoundingClientRect().height;
 
 // svg objects
-let link, node;
+let link, node, text;
 
 const rawData = {};
 
@@ -210,7 +210,7 @@ const getStatus = (playersList) => {
     body: playersList.join()
   }).then(r => r.json()).then(res => {
     res.map(user => {
-      console.log("user api status", user)
+      //console.log("user api status", user)
       if (user.tosViolation) {
         dlPlayers.nodes[user.id].status = "tos"
       } else if (user.disabled) {
@@ -370,7 +370,7 @@ function updateForces(graph) {
 // generate the svg objects and force simulation
 function initializeDisplay(graph) {
   // set the data and properties of link lines
-  console.log("graph init", graph)
+  //console.log("graph init", graph)
   link = svg.append("g")
         .attr("class", "links")
     .selectAll("line")
@@ -398,6 +398,13 @@ function initializeDisplay(graph) {
   // node tooltip
   node.append("title")
       .text(d => d.id);
+
+  text = svg.append("g").selectAll("text")
+    .data(graph.nodes)
+    .enter().append("text")
+    .attr("x", 10)
+    .attr("y", ".31em")
+    .text(d => d.id);
 
   // visualize the graph
   updateDisplay();
@@ -438,12 +445,16 @@ function ticked() {
         .attr("x2", d => d.target.x)
         .attr("y2", d => d.target.y);
 
-    node
-        .attr("cx", d =>  d.x)
-        .attr("cy", d => d.y);
+    // node
+    //     .attr("cx", d =>  d.x)
+    //     .attr("cy", d => d.y);
+    node.attr("transform", transform);
+    text.attr("transform", transform);
     d3.select('#alpha_value').style('flex-basis', (simulation.alpha()*100) + '%');
 }
 
+
+const transform = (d) => "translate(" + d.x + "," + d.y + ")"
 
 
 //////////// UI EVENTS ////////////
