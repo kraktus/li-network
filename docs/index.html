@@ -199,17 +199,10 @@
       document.getElementById('lichessId').value = config.lichessId;
       document.getElementById('nodeLabels').value = config.nodeLabels;
 
-      document.getElementById('maxGameInput').value = config.maxGame;
-      d3.select('#maxGame').text(config.maxGame);
-
-      document.getElementById('accountSeniorityInput').value = config.accountSeniority;
-      d3.select('#accountSeniority').text(config.accountSeniority);
-
-      document.getElementById('minVsGameInput').value = config.minVsGame;
-      d3.select('#minVsGame').text(config.minVsGame);
-
-      document.getElementById('maxMeanPliesInput').value = config.maxMeanPlies;
-      d3.select('#maxMeanPlies').text(config.maxMeanPlies);
+      ["maxGame", "accountSeniority", "minVsGame", "maxMeanPlies"].forEach(x => {
+        document.getElementById(`${x}Input`)[x] = config[x];
+        d3.select(`#${x}`).text(config[x]);
+      })
 
       document.getElementById('search').checked = config.search;
       document.getElementById('enableAccountSeniority').checked = config.enableAccountSeniority;
