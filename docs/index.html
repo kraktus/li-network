@@ -200,7 +200,7 @@
       document.getElementById('nodeLabels').value = config.nodeLabels;
 
       ["maxGame", "accountSeniority", "minVsGame", "maxMeanPlies"].forEach(x => {
-        document.getElementById(`${x}Input`)[x] = config[x];
+        document.getElementById(`${x}Input`).value = config[x];
         d3.select(`#${x}`).text(config[x]);
       })
 
@@ -292,7 +292,7 @@
         rawData[`${players[0][0].user.id}/${players[1][0].user.id}`] = playerLink;
       };
 
-      const getStatus = playersList => {
+      const getInfo = playersList => {
         console.log('join', playersList.join());
         fetch('https://lichess.org/api/users', {
           method: 'POST',
@@ -308,7 +308,9 @@
                 dlPlayers.nodes[user.id].status = 'disabled';
               } else {
                 dlPlayers.nodes[user.id].status = 'good';
-              }
+              };
+              //console.log("perfsX", Object.keys(user.perfs).filter(x => !["puzzle", "storm", "streak", "racer"].includes(x)));
+              dlPlayers.nodes[user.id].games = Object.keys(user.perfs).filter(x => !["puzzle", "storm", "streak", "racer"].includes(x)).map(perfT => user.perfs[perfT].games).reduce( (a, b) => a + b) // DEBUG .map(x=> {console.log(user.id, user.perfs,"games", x); return x})
             });
           });
       };
@@ -346,11 +348,22 @@
           };
         });
         playerNodes = [...playerNodes];
-        console.log(playerNodes);
-        // get user status
-        const usersWithoutStatus = playerNodes.filter(x => dlPlayers.nodes[x].status === undefined);
-        console.log('usersWithoutStatus chunked', chunkArray(usersWithoutStatus, 300));
-        chunkArray(usersWithoutStatus, 300).map(getStatus);
+        //console.log(playerNodes);
+        // get user status and number of games
+        const usersWithoutInfo = playerNodes.filter(x => dlPlayers.nodes[x].status === undefined);
+        console.log('usersWithoutInfo chunked', chunkArray(usersWithoutInfo, 300));
+        chunkArray(usersWithoutInfo, 300).forEach(getInfo);
+        if (config.enableAccountSeniority) {
+          console.log("TEST enableAccountSeniority before", playerNodes)
+          playerNodes = playerNodes.filter(x => {
+            console.log("seniority check", x, dlPlayers.nodes[x], dlPlayers.nodes[x].games <= config.accountSeniority);
+            return dlPlayers.nodes[x].games <= config.accountSeniority
+          })
+          // now we need to filter links too
+          const playersNewEnough = new Set(playerNodes);
+          playerLinks = playerLinks.filter(x => playersNewEnough.has(x.source) && playersNewEnough.has(x.target))
+          console.log("after", playerNodes)
+        }
         return {
           nodes: playerNodes.map(x => {
             return { id: x, status: dlPlayers.nodes[x].status };
@@ -471,7 +484,7 @@
       // generate the svg objects and force simulation
       function initializeDisplay(graph) {
         // set the data and properties of link lines
-        //console.log("graph init", graph)
+        console.log("graph init", graph)
         link = svg
           .append('g')
           .attr('class', 'links')
