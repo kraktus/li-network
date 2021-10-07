@@ -1,493 +1,581 @@
 <html>
-<head>
-<style>
-/* HTML styles */
-html{ width: 100%; }
-body{ 
-  width: 100%; 
-  margin: 0; padding: 0; 
-  display: flex; 
-  font-family: sans-serif; font-size: 75%; }
-.controls {
-  flex-basis: 200px;
-  padding: 0 5px;
-}
-.controls .force {
-  background-color:#eee;
-  border-radius: 3px;
-  padding: 5px;
-  margin: 5px 0;
-}
-.controls .force p label { margin-right: .5em; font-size: 120%; font-weight: bold;}
-.controls .force p { margin-top: 0;}
-.controls .force label { display: inline-block; }
-.controls input[type="checkbox"] { transform: scale(1.2, 1.2); }
-.controls input[type="range"] { margin: 0 5% 0.5em 5%; width: 90%; }
-/* alpha viewer */
-.controls .alpha p { margin-bottom: .25em; }
-.controls .alpha .alpha_bar { height: .5em; border: 1px #777 solid; border-radius: 2px; padding: 1px; display: flex; }
-.controls .alpha .alpha_bar #alpha_value { background-color: #555; border-radius: 1px; flex-basis: 100% }
-.controls .alpha .alpha_bar:hover { border-width: 2px; margin:-1px; }
-.controls .alpha .alpha_bar:active #alpha_value { background-color: #222 }
-
-/* SVG styles */
-svg {
-  flex-basis: 100%;
-  min-width: 200px;
-}
-.nodes circle {
-  pointer-events: all;
-}
-
-</style>
-</head>
-<body>
-<div class="controls">
-  <div class="force alpha">
-    <p><label>alpha</label> Simulation activity</p>
-    <div class="alpha_bar" onclick="restart();"><div id="alpha_value"></div></div>
-  </div>
-  <div class="force">
-    <label><strong>Api</strong>
-      <label><input type="text" id="lichessId" autocomplete="off">Lichess username</label>
-      <br>
-      <div>Max number of games fetched by player</div>
-      <output id="maxGame"></output>
-      <input type="range" min="10" max="1000" step="10" id="maxGameInput" oninput="d3.select('#maxGame').text(value); config.maxGame=value">
-      <label><input type="checkbox" id="search" onclick="if (this.checked) {config.lichessId=document.getElementById('lichessId').value; startApi()}; config.search = this.checked;">Search</label>
-    </label>
-  </div>
-
-  <div class="force">
-    <label><strong onload="minVsGame.value = config.minVsGame">Display</strong>
-      <br>
-      <div>Minimum number of games played against each other to be displayed</div>
-      <output id="minVsGame"></output>
-      <input type="range" min="1" max="20" step="1" id="minVsGameInput" oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();">
-    </label>
-    <br>
-      <div>Minimum number of games played against each other to be displayed</div>
-      <output id="maxMeanPlies"></output>
-      <input type="range" min="1" max="200" step="1" id="maxMeanPliesInput" oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();">
-    <label><input type="checkbox", id="refresh" onclick="config.refresh=this.checked; console.log('refresh', config.refresh)">Refresh</label>
-    </label>
-  </div>
-
-</div>
-<svg></svg>
-<script src="https://d3js.org/d3.v4.min.js"></script>
-<script>
-let svg = d3.select("svg"),
-    width = +svg.node().getBoundingClientRect().width,
-    height = +svg.node().getBoundingClientRect().height;
-
-// svg objects
-let link, node, text;
-
-const rawData = {};
-
-// list players we already downloaded games from, and keep track of the "involvement" of a player in the network (i.e number of games played).
-let dlPlayers = {
-  alreadyDl: new Set(),
-  nodes: {}
-}
-
-const urlParams = new URLSearchParams(window.location.search);
-
-let config = {
-  lichessId: urlParams.get("user") || "german11",
-  maxGame: 100,
-  minVsGame: 2,
-  refresh: false,
-  search: false,
-  maxMeanPlies: 100,
-}
-
-let originalIdSearched;
-
-document.getElementById("lichessId").value = config.lichessId
-
-document.getElementById("maxGameInput").value = config.maxGame
-d3.select('#maxGame').text(config.maxGame)
-
-document.getElementById("minVsGameInput").value = config.minVsGame
-d3.select('#minVsGame').text(config.minVsGame)
-
-document.getElementById("maxMeanPliesInput").value = config.maxMeanPlies
-d3.select('#maxMeanPlies').text(config.maxMeanPlies)
-
-document.getElementById("search").checked = config.search
-document.getElementById("refresh").checked = config.refresh
-
-
-
-const readStream = processLine => response => {
-  const stream = response.body.getReader();
-  const matcher = /\r?\n/;
-  const decoder = new TextDecoder();
-  let buf = '';
-  const loop = () =>
-    stream.read().then(({ done, value }) => {
-      //console.log(done, value)
-      if (!config.search) {
-        return
+  <head>
+    <style>
+      /* HTML styles */
+      html {
+        width: 100%;
       }
-      if (done) {
-        if (buf.length > 0) processLine(JSON.parse(buf));
-        console.log("DONE")
-        chooseNewPlayerDl(); // hacky, should be a parameter of `readStream`
-        startApi() // start-over!
-      } else {
-        const chunk = decoder.decode(value, {
-          stream: true
-        });
-        buf += chunk;
-
-        const parts = buf.split(matcher);
-        buf = parts.pop();
-        for (const i of parts.filter(p => p)) processLine(JSON.parse(i));
-        return loop();
+      body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        font-family: sans-serif;
+        font-size: 75%;
       }
-    });
+      .controls {
+        flex-basis: 200px;
+        padding: 0 5px;
+      }
+      .controls .force {
+        background-color: #eee;
+        border-radius: 3px;
+        padding: 5px;
+        margin: 5px 0;
+      }
+      .controls .force p label {
+        margin-right: 0.5em;
+        font-size: 120%;
+        font-weight: bold;
+      }
+      .controls .force p {
+        margin-top: 0;
+      }
+      .controls .force label {
+        display: inline-block;
+      }
+      .controls input[type='checkbox'] {
+        transform: scale(1.2, 1.2);
+      }
+      .controls input[type='range'] {
+        margin: 0 5% 0.5em 5%;
+        width: 90%;
+      }
+      /* alpha viewer */
+      .controls .alpha p {
+        margin-bottom: 0.25em;
+      }
+      .controls .alpha .alpha_bar {
+        height: 0.5em;
+        border: 1px #777 solid;
+        border-radius: 2px;
+        padding: 1px;
+        display: flex;
+      }
+      .controls .alpha .alpha_bar #alpha_value {
+        background-color: #555;
+        border-radius: 1px;
+        flex-basis: 100%;
+      }
+      .controls .alpha .alpha_bar:hover {
+        border-width: 2px;
+        margin: -1px;
+      }
+      .controls .alpha .alpha_bar:active #alpha_value {
+        background-color: #222;
+      }
 
-  return loop();
-}
+      /* SVG styles */
+      svg {
+        flex-basis: 100%;
+        min-width: 200px;
+      }
+      .nodes circle {
+        pointer-events: all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <div class="force alpha">
+        <p><label>alpha</label> Simulation activity</p>
+        <div class="alpha_bar" onclick="restart();"><div id="alpha_value"></div></div>
+      </div>
+      <div class="force">
+        <label
+          ><strong>Api</strong>
+          <div>Lichess username</div>
+          <input type="text" id="lichessId" autocomplete="off" />
+          <br />
+          <div>Max number of games fetched by player</div>
+          <output id="maxGame"></output>
+          <input
+            type="range"
+            min="10"
+            max="1000"
+            step="10"
+            id="maxGameInput"
+            oninput="d3.select('#maxGame').text(value); config.maxGame=value"
+          />
+          <label
+            ><input
+              type="checkbox"
+              id="search"
+              onclick="if (this.checked) {config.lichessId=document.getElementById('lichessId').value; startApi()}; config.search = this.checked;"
+            />Search</label
+          >
+        </label>
+      </div>
 
-const headers = new Headers({
-    "accept": "application/x-ndjson"
-});
-const options = {
-    headers: headers,
-}
+      <div class="force">
+        <label
+          ><strong onload="minVsGame.value = config.minVsGame">Display</strong>
+          <br />
+          <div>Minimum number of games played against each other to be displayed</div>
+          <output id="minVsGame"></output>
+          <input
+            type="range"
+            min="1"
+            max="20"
+            step="1"
+            id="minVsGameInput"
+            oninput="d3.select('#minVsGame').text(value); config.minVsGame=value; restart();"
+          />
+        </label>
+        <br />
+        <div>Minimum number of games played against each other to be displayed</div>
+        <output id="maxMeanPlies"></output>
+        <input
+          type="range"
+          min="1"
+          max="200"
+          step="1"
+          id="maxMeanPliesInput"
+          oninput="d3.select('#maxMeanPlies').text(value); config.maxMeanPlies=value; restart();"
+        />
+        <label
+          ><input
+            type="checkbox"
+            ,
+            id="refresh"
+            onclick="config.refresh=this.checked; console.log('refresh', config.refresh)"
+          />Refresh</label
+        >
+      </div>
+    </div>
+    <svg></svg>
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script>
+      let svg = d3.select('svg'),
+        width = +svg.node().getBoundingClientRect().width,
+        height = +svg.node().getBoundingClientRect().height;
 
-const onGame = game => {
-  // sorted alphabetically
-  //console.log("game", game)
-  const players = [[game.players.white, "white"], [game.players.black, "black"]]
-  .sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
-  // store the outcome compared to the first player
-  let score = 0;
-  const plies = game.moves.split(" ").length
-  //console.log("plies", plies)
-  if (game.winner == undefined) {
-    score = 0.5
-  } else if (game.winner == players[0][1]) {
-    score = 1
-  }
-  //console.log("createdAt", game.createdAt)
-  let playerLink = rawData[`${players[0][0].user.id}/${players[1][0].user.id}`]
-  // sanity check, look if we've already treated the game
-  // do NOT change state of a global before
-  if ((playerLink?.createdAt || game.createdAt) < game.createdAt) {
-    //console.log("SKIPPING", playerLink?.createdAt, game.createdAt)
-    return
-  }
-  // update players' involvment
-  players.forEach(p => {
-   let id = p[0].user.id;
-   dlPlayers.nodes[id] = (dlPlayers.nodes[id] || {"involvement": 0, "status": undefined});
-   dlPlayers.nodes[id].involvement += 1;
-  });
-  if (playerLink == undefined) {
-    playerLink = {}
-    playerLink.games = 1
-    playerLink.score = score
-    playerLink.createdAt = game.createdAt
-    playerLink.plies = plies
-  } else {
-    playerLink.games += 1
-    playerLink.score += score
-    playerLink.createdAt = game.createdAt
-    playerLink.plies += plies
-  }
-  rawData[`${players[0][0].user.id}/${players[1][0].user.id}`] = playerLink
-}
+      // svg objects
+      let link, node, text;
 
-const getStatus = (playersList) => {
-  console.log("join", playersList.join());
-  fetch("https://lichess.org/api/users", {
-    method: 'POST',
-    body: playersList.join()
-  }).then(r => r.json()).then(res => {
-    res.map(user => {
-      //console.log("user api status", user)
-      if (user.tosViolation) {
-        dlPlayers.nodes[user.id].status = "tos"
-      } else if (user.disabled) {
-        dlPlayers.nodes[user.id].status = "disabled"
-      } else {
-        dlPlayers.nodes[user.id].status = "good"
-      }})
-  })
-}
+      const rawData = {};
 
-fetch("https://lichess.org/api/users", {
-    method: 'POST',
-    body: "german11, german13",
-  }).then(console.log)
+      // list players we already downloaded games from, and keep track of the "involvement" of a player in the network (i.e number of games played).
+      let dlPlayers = {
+        alreadyDl: new Set(),
+        nodes: {},
+      };
 
-const chunkArray = (myArray, chunk_size) => {
-    let index = 0;
-    let buf = []; 
-    for (index = 0; index < myArray.length; index += chunk_size) {
-        myChunk = myArray.slice(index, index+chunk_size);
-        buf.push(myChunk);
-    }
-    return buf
-}
+      const urlParams = new URLSearchParams(window.location.search);
 
-const makeGraph = () => {
+      let config = {
+        lichessId: urlParams.get('user') || 'german11',
+        maxGame: 100,
+        minVsGame: 2,
+        refresh: false,
+        search: false,
+        maxMeanPlies: 100,
+      };
 
-  const filteredData = Object.entries(rawData).filter(x => x[1].games >= config.minVsGame && x[1].plies / x[1].games <= config.maxMeanPlies
-  );
-  //console.log("filteredData", filteredData)
-  let playerNodes = new Set();
-  //console.log(playerNodes);
-  filteredData.forEach(x => x[0].split('/').forEach(x => playerNodes.add(x)));
-  let playerLinks = filteredData.map(x => {
-    let players = x[0].split('/');
-    return {
-      "source": players[0],
-      "target": players[1],
-      "games": x[1].games,
-      "score": x[1].score
-    }
-  });
-  playerNodes = [...playerNodes];
-  console.log(playerNodes)
-  // get user status
-  const usersWithoutStatus = playerNodes.filter(x => dlPlayers.nodes[x].status === undefined);
-  console.log("usersWithoutStatus chunked", chunkArray(usersWithoutStatus, 300));
-  chunkArray(usersWithoutStatus, 300).map(getStatus);
-  return {
-    "nodes": playerNodes.map(x => {return {"id": x, "status": dlPlayers.nodes[x].status}}),
-    "links": playerLinks
-  }
-}
+      let originalIdSearched;
 
-let forceProperties = {
-    center: {
-        x: 0.5,
-        y: 0.5
-    },
-    charge: {
-        enabled: true,
-        strength: -20,
-        distanceMin: 1,
-        distanceMax: 2000
-    },
-    collide: {
-        enabled: true,
-        strength: .7,
-        iterations: 1,
-        radius: 5
-    },
-    link: {
-        enabled: true,
-        distance: 30,
-        iterations: 1
-    }
-};
-// force simulator
-let simulation = d3.forceSimulation();
+      document.getElementById('lichessId').value = config.lichessId;
 
-const chooseNewPlayerDl = () => {
-  console.log("dlPlayers", dlPlayers);
-  const playerId = Object.entries(dlPlayers.nodes);
-  playerId.sort((a, b) => -a[1].involvement > -b[1].involvement);
-  console.log("playerIds", playerId);
-  config.lichessId = playerId.map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0]
-}
+      document.getElementById('maxGameInput').value = config.maxGame;
+      d3.select('#maxGame').text(config.maxGame);
 
-const startApi = () => {
-  originalIdSearched = originalIdSearched || config.lichessId.toLowerCase();
-  dlPlayers.alreadyDl.add(config.lichessId.toLowerCase());
-  console.log("player searching", config.lichessId);
-  fetch(`https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&tags=false`, options).then(readStream(onGame));
-}
+      document.getElementById('minVsGameInput').value = config.minVsGame;
+      d3.select('#minVsGame').text(config.minVsGame);
 
-const restart = () => {
-  svg.selectAll("*").remove();
-  let graph = makeGraph();
-  //console.log("graph", graph);
-  initializeSimulation(graph);
-  initializeDisplay(graph);
-}
-setInterval(() => {if (config.refresh) {console.log("ref", config.refresh); restart()}}, 2000);
+      document.getElementById('maxMeanPliesInput').value = config.maxMeanPlies;
+      d3.select('#maxMeanPlies').text(config.maxMeanPlies);
 
+      document.getElementById('search').checked = config.search;
+      document.getElementById('refresh').checked = config.refresh;
 
-//////////// FORCE SIMULATION //////////// 
-
-
-
-// set up the simulation and event to update locations after each tick
-function initializeSimulation(graph) {
-  simulation.nodes(graph.nodes);
-  initializeForces();
-  updateForces(graph);
-  simulation.on("tick", ticked);
-}
-// add forces to the simulation
-function initializeForces() {
-    // add forces and associate each with a name
-    simulation
-        .force("link", d3.forceLink())
-        .force("charge", d3.forceManyBody())
-        .force("collide", d3.forceCollide())
-        .force("center", d3.forceCenter());
-    // apply properties to each of the forces
-}
-
-// apply new force properties
-function updateForces(graph) {
-    // get each force by name and update the properties
-    simulation.force("center")
-        .x(width * forceProperties.center.x)
-        .y(height * forceProperties.center.y);
-    simulation.force("charge")
-        .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
-        .distanceMin(forceProperties.charge.distanceMin)
-        .distanceMax(forceProperties.charge.distanceMax);
-    simulation.force("collide")
-        .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
-        .radius(forceProperties.collide.radius)
-        .iterations(forceProperties.collide.iterations);
-    simulation.force("link")
-        .id(d => d.id)
-        .distance(forceProperties.link.distance)
-        .iterations(forceProperties.link.iterations)
-        .links(forceProperties.link.enabled ? graph.links : []);
-
-    // updates ignored until this is run
-    // restarts the simulation (important if simulation has already slowed down)
-    simulation.alpha(1).restart();
-}
-
-
-
-//////////// DISPLAY ////////////
-
-// generate the svg objects and force simulation
-function initializeDisplay(graph) {
-  // set the data and properties of link lines
-  //console.log("graph init", graph)
-  link = svg.append("g")
-        .attr("class", "links")
-    .selectAll("line")
-    .data(graph.links)
-    .enter().append("line")
-    .on("click", d => {
-      //console.log(d.source);
-      window.open(`https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}&mode=1`, "_blank")});
-
-  link.append("title")
-      .text(d => `${d.source.id}: ${d.score}/${d.games}`);
-
-  // set the data and properties of node circles
-  node = svg.append("g")
-        .attr("class", "nodes")
-    .selectAll("nodes")
-    .data(graph.nodes)
-    .enter().append("circle")
-        .call(d3.drag()
-            .on("start", dragstarted)
-            .on("drag", dragged)
-            .on("end", dragended))
-        .on("click", d => window.open(`https://lichess.org/@/${d.id}`, "_blank"));
-
-  // node tooltip
-  node.append("title")
-      .text(d => d.id);
-
-  text = svg.append("g").selectAll("text")
-    .data(graph.nodes)
-    .enter().append("text")
-    .attr("x", 10)
-    .attr("y", ".31em")
-    .text(d => d.id);
-
-  // visualize the graph
-  updateDisplay();
-}
-
-// update the display based on the forces (but not positions)
-function updateDisplay() {
-  const colors  = d3.scaleLinear().domain([0,50]).range(["grey", "red"])
-
-    node
-        .attr("r", forceProperties.collide.radius)
-        .attr("stroke", d => {
-          if (d.id == originalIdSearched) {
-            return "blue"
-          };
-          switch (d.status) {
-            case "tos": return "orange";
-            case "disabled": return "black";
-            case "good": return "green";
-            case undefined: return "grey";
+      const readStream = processLine => response => {
+        const stream = response.body.getReader();
+        const matcher = /\r?\n/;
+        const decoder = new TextDecoder();
+        let buf = '';
+        const loop = () =>
+          stream.read().then(({ done, value }) => {
+            //console.log(done, value)
+            if (!config.search) {
+              return;
             }
-          }
-          )
-        .attr("stroke-width", 10);
+            if (done) {
+              if (buf.length > 0) processLine(JSON.parse(buf));
+              console.log('DONE');
+              chooseNewPlayerDl(); // hacky, should be a parameter of `readStream`
+              startApi(); // start-over!
+            } else {
+              const chunk = decoder.decode(value, {
+                stream: true,
+              });
+              buf += chunk;
 
-    link
-        .attr("stroke-width", d => d.games)
-        .attr("stroke", d => colors(Math.abs(d.score/d.games - 0.5)*100))
-        .attr("opacity", forceProperties.link.enabled ? 1 : 0);
-    console.log(node, link)
-}
+              const parts = buf.split(matcher);
+              buf = parts.pop();
+              for (const i of parts.filter(p => p)) processLine(JSON.parse(i));
+              return loop();
+            }
+          });
 
-// update the display positions after each simulation tick
-function ticked() {
-    link
-        .attr("x1", d => d.source.x)
-        .attr("y1", d => d.source.y)
-        .attr("x2", d => d.target.x)
-        .attr("y2", d => d.target.y);
+        return loop();
+      };
 
-    // node
-    //     .attr("cx", d =>  d.x)
-    //     .attr("cy", d => d.y);
-    node.attr("transform", transform);
-    text.attr("transform", transform);
-    d3.select('#alpha_value').style('flex-basis', (simulation.alpha()*100) + '%');
-}
+      const headers = new Headers({
+        accept: 'application/x-ndjson',
+      });
+      const options = {
+        headers: headers,
+      };
 
+      const onGame = game => {
+        // sorted alphabetically
+        //console.log("game", game)
+        const players = [
+          [game.players.white, 'white'],
+          [game.players.black, 'black'],
+        ].sort((a, b) => a[0].user.id.localeCompare(b[0].user.id));
+        // store the outcome compared to the first player
+        let score = 0;
+        const plies = game.moves.split(' ').length;
+        //console.log("plies", plies)
+        if (game.winner == undefined) {
+          score = 0.5;
+        } else if (game.winner == players[0][1]) {
+          score = 1;
+        }
+        //console.log("createdAt", game.createdAt)
+        let playerLink = rawData[`${players[0][0].user.id}/${players[1][0].user.id}`];
+        // sanity check, look if we've already treated the game
+        // do NOT change state of a global before
+        if ((playerLink?.createdAt || game.createdAt) < game.createdAt) {
+          //console.log("SKIPPING", playerLink?.createdAt, game.createdAt)
+          return;
+        }
+        // update players' involvment
+        players.forEach(p => {
+          let id = p[0].user.id;
+          dlPlayers.nodes[id] = dlPlayers.nodes[id] || { involvement: 0, status: undefined };
+          dlPlayers.nodes[id].involvement += 1;
+        });
+        if (playerLink == undefined) {
+          playerLink = {};
+          playerLink.games = 1;
+          playerLink.score = score;
+          playerLink.createdAt = game.createdAt;
+          playerLink.plies = plies;
+        } else {
+          playerLink.games += 1;
+          playerLink.score += score;
+          playerLink.createdAt = game.createdAt;
+          playerLink.plies += plies;
+        }
+        rawData[`${players[0][0].user.id}/${players[1][0].user.id}`] = playerLink;
+      };
 
-const transform = (d) => "translate(" + d.x + "," + d.y + ")"
+      const getStatus = playersList => {
+        console.log('join', playersList.join());
+        fetch('https://lichess.org/api/users', {
+          method: 'POST',
+          body: playersList.join(),
+        })
+          .then(r => r.json())
+          .then(res => {
+            res.map(user => {
+              //console.log("user api status", user)
+              if (user.tosViolation) {
+                dlPlayers.nodes[user.id].status = 'tos';
+              } else if (user.disabled) {
+                dlPlayers.nodes[user.id].status = 'disabled';
+              } else {
+                dlPlayers.nodes[user.id].status = 'good';
+              }
+            });
+          });
+      };
 
+      fetch('https://lichess.org/api/users', {
+        method: 'POST',
+        body: 'german11, german13',
+      }).then(console.log);
 
-//////////// UI EVENTS ////////////
+      const chunkArray = (myArray, chunk_size) => {
+        let index = 0;
+        let buf = [];
+        for (index = 0; index < myArray.length; index += chunk_size) {
+          myChunk = myArray.slice(index, index + chunk_size);
+          buf.push(myChunk);
+        }
+        return buf;
+      };
 
-function dragstarted(d) {
-  if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-  d.fx = d.x;
-  d.fy = d.y;
-}
+      const makeGraph = () => {
+        const filteredData = Object.entries(rawData).filter(
+          x => x[1].games >= config.minVsGame && x[1].plies / x[1].games <= config.maxMeanPlies
+        );
+        //console.log("filteredData", filteredData)
+        let playerNodes = new Set();
+        //console.log(playerNodes);
+        filteredData.forEach(x => x[0].split('/').forEach(x => playerNodes.add(x)));
+        let playerLinks = filteredData.map(x => {
+          let players = x[0].split('/');
+          return {
+            source: players[0],
+            target: players[1],
+            games: x[1].games,
+            score: x[1].score,
+          };
+        });
+        playerNodes = [...playerNodes];
+        console.log(playerNodes);
+        // get user status
+        const usersWithoutStatus = playerNodes.filter(x => dlPlayers.nodes[x].status === undefined);
+        console.log('usersWithoutStatus chunked', chunkArray(usersWithoutStatus, 300));
+        chunkArray(usersWithoutStatus, 300).map(getStatus);
+        return {
+          nodes: playerNodes.map(x => {
+            return { id: x, status: dlPlayers.nodes[x].status };
+          }),
+          links: playerLinks,
+        };
+      };
 
-function dragged(d) {
-  d.fx = d3.event.x;
-  d.fy = d3.event.y;
-}
+      let forceProperties = {
+        center: {
+          x: 0.5,
+          y: 0.5,
+        },
+        charge: {
+          enabled: true,
+          strength: -20,
+          distanceMin: 1,
+          distanceMax: 2000,
+        },
+        collide: {
+          enabled: true,
+          strength: 0.7,
+          iterations: 1,
+          radius: 5,
+        },
+        link: {
+          enabled: true,
+          distance: 30,
+          iterations: 1,
+        },
+      };
+      // force simulator
+      let simulation = d3.forceSimulation();
 
-function dragended(d) {
-  if (!d3.event.active) simulation.alphaTarget(0.0001);
-  d.fx = null;
-  d.fy = null;
-}
+      const chooseNewPlayerDl = () => {
+        console.log('dlPlayers', dlPlayers);
+        const playerId = Object.entries(dlPlayers.nodes);
+        playerId.sort((a, b) => -a[1].involvement > -b[1].involvement);
+        console.log('playerIds', playerId);
+        config.lichessId = playerId.map(x => x[0]).filter(x => !dlPlayers.alreadyDl.has(x))[0];
+      };
 
-// update size-related forces
-d3.select(window).on("resize", function(){
-    width = +svg.node().getBoundingClientRect().width;
-    height = +svg.node().getBoundingClientRect().height;
-    updateForces();
-});
+      const startApi = () => {
+        originalIdSearched = originalIdSearched || config.lichessId.toLowerCase();
+        dlPlayers.alreadyDl.add(config.lichessId.toLowerCase());
+        console.log('player searching', config.lichessId);
+        fetch(
+          `https://lichess.org/api/games/user/${config.lichessId}?max=${config.maxGame}&rated=true&tags=false`,
+          options
+        ).then(readStream(onGame));
+      };
 
-// convenience function to update everything (run after UI input)
-function updateAll() {
-    updateForces();
-    updateDisplay();
-}
-</script>
-</body>
+      const restart = () => {
+        svg.selectAll('*').remove();
+        let graph = makeGraph();
+        //console.log("graph", graph);
+        initializeSimulation(graph);
+        initializeDisplay(graph);
+      };
+      setInterval(() => {
+        if (config.refresh) {
+          console.log('ref', config.refresh);
+          restart();
+        }
+      }, 2000);
+
+      //////////// FORCE SIMULATION ////////////
+
+      // set up the simulation and event to update locations after each tick
+      function initializeSimulation(graph) {
+        simulation.nodes(graph.nodes);
+        initializeForces();
+        updateForces(graph);
+        simulation.on('tick', ticked);
+      }
+      // add forces to the simulation
+      function initializeForces() {
+        // add forces and associate each with a name
+        simulation
+          .force('link', d3.forceLink())
+          .force('charge', d3.forceManyBody())
+          .force('collide', d3.forceCollide())
+          .force('center', d3.forceCenter());
+        // apply properties to each of the forces
+      }
+
+      // apply new force properties
+      function updateForces(graph) {
+        // get each force by name and update the properties
+        simulation
+          .force('center')
+          .x(width * forceProperties.center.x)
+          .y(height * forceProperties.center.y);
+        simulation
+          .force('charge')
+          .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
+          .distanceMin(forceProperties.charge.distanceMin)
+          .distanceMax(forceProperties.charge.distanceMax);
+        simulation
+          .force('collide')
+          .strength(forceProperties.collide.strength * forceProperties.collide.enabled)
+          .radius(forceProperties.collide.radius)
+          .iterations(forceProperties.collide.iterations);
+        simulation
+          .force('link')
+          .id(d => d.id)
+          .distance(forceProperties.link.distance)
+          .iterations(forceProperties.link.iterations)
+          .links(forceProperties.link.enabled ? graph.links : []);
+
+        // updates ignored until this is run
+        // restarts the simulation (important if simulation has already slowed down)
+        simulation.alpha(1).restart();
+      }
+
+      //////////// DISPLAY ////////////
+
+      // generate the svg objects and force simulation
+      function initializeDisplay(graph) {
+        // set the data and properties of link lines
+        //console.log("graph init", graph)
+        link = svg
+          .append('g')
+          .attr('class', 'links')
+          .selectAll('line')
+          .data(graph.links)
+          .enter()
+          .append('line')
+          .on('click', d => {
+            //console.log(d.source);
+            window.open(
+              `https://lichess.org/@/${d.source.id}/search?players.a=${d.source.id}&players.b=${d.target.id}&mode=1`,
+              '_blank'
+            );
+          });
+
+        link.append('title').text(d => `${d.source.id}: ${d.score}/${d.games}`);
+
+        // set the data and properties of node circles
+        node = svg
+          .append('g')
+          .attr('class', 'nodes')
+          .selectAll('nodes')
+          .data(graph.nodes)
+          .enter()
+          .append('circle')
+          .call(d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended))
+          .on('click', d => window.open(`https://lichess.org/@/${d.id}`, '_blank'));
+
+        // node tooltip
+        node.append('title').text(d => d.id);
+
+        text = svg
+          .append('g')
+          .selectAll('text')
+          .data(graph.nodes)
+          .enter()
+          .append('text')
+          .attr('x', 10)
+          .attr('y', '.31em')
+          .text(d => d.id);
+
+        // visualize the graph
+        updateDisplay();
+      }
+
+      // update the display based on the forces (but not positions)
+      function updateDisplay() {
+        const colors = d3.scaleLinear().domain([0, 50]).range(['grey', 'red']);
+
+        node
+          .attr('r', forceProperties.collide.radius)
+          .attr('stroke', d => {
+            if (d.id == originalIdSearched) {
+              return 'blue';
+            }
+            switch (d.status) {
+              case 'tos':
+                return 'orange';
+              case 'disabled':
+                return 'black';
+              case 'good':
+                return 'green';
+              case undefined:
+                return 'grey';
+            }
+          })
+          .attr('stroke-width', 10);
+
+        link
+          .attr('stroke-width', d => d.games)
+          .attr('stroke', d => colors(Math.abs(d.score / d.games - 0.5) * 100))
+          .attr('opacity', forceProperties.link.enabled ? 1 : 0);
+        console.log(node, link);
+      }
+
+      // update the display positions after each simulation tick
+      function ticked() {
+        link
+          .attr('x1', d => d.source.x)
+          .attr('y1', d => d.source.y)
+          .attr('x2', d => d.target.x)
+          .attr('y2', d => d.target.y);
+
+        // node
+        //     .attr("cx", d =>  d.x)
+        //     .attr("cy", d => d.y);
+        node.attr('transform', transform);
+        text.attr('transform', transform);
+        d3.select('#alpha_value').style('flex-basis', simulation.alpha() * 100 + '%');
+      }
+
+      const transform = d => 'translate(' + d.x + ',' + d.y + ')';
+
+      //////////// UI EVENTS ////////////
+
+      function dragstarted(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      }
+
+      function dragged(d) {
+        d.fx = d3.event.x;
+        d.fy = d3.event.y;
+      }
+
+      function dragended(d) {
+        if (!d3.event.active) simulation.alphaTarget(0.0001);
+        d.fx = null;
+        d.fy = null;
+      }
+
+      // update size-related forces
+      d3.select(window).on('resize', function () {
+        width = +svg.node().getBoundingClientRect().width;
+        height = +svg.node().getBoundingClientRect().height;
+        updateForces();
+      });
+
+      // convenience function to update everything (run after UI input)
+      function updateAll() {
+        updateForces();
+        updateDisplay();
+      }
+    </script>
+  </body>
 </html>
