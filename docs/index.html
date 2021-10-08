@@ -151,6 +151,17 @@
           oninput="d3.select('#accountSeniority').text(value); config.accountSeniority=value; restart();"
         />
         <br />
+        <span>Zoom: </span>
+        <output id="zoom"></output>
+        <input
+          type="range"
+          min="0.2"
+          max="5"
+          step="0.1"
+          id="zoomInput"
+          oninput="d3.select('#zoom').text(value); config.zoom=value; restart();"
+        />
+        <br />
         <input type="checkbox" , id="nodeLabels" onclick="config.nodeLabels=this.checked; restart()" />Show usernames
         <div>
           <input
@@ -177,7 +188,7 @@
       // list players we already downloaded games from, and keep track of the "involvement" of a player in the network (i.e number of games played).
       let dlPlayers = {
         alreadyDl: new Set(),
-        nodes: {},
+        nodes: {}, // each node has `status`, and `games` attribute
       };
 
       const urlParams = new URLSearchParams(window.location.search);
@@ -192,6 +203,7 @@
         search: false,
         maxMeanPlies: 100,
         nodeLabels: false,
+        zoom: 1,
       };
 
       let originalIdSearched;
@@ -201,7 +213,7 @@
       document.getElementById('lichessId').value = config.lichessId;
       document.getElementById('nodeLabels').value = config.nodeLabels;
 
-      ["maxGame", "accountSeniority", "minVsGame", "maxMeanPlies"].forEach(x => {
+      ["maxGame", "accountSeniority", "minVsGame", "maxMeanPlies", "zoom"].forEach(x => {
         document.getElementById(`${x}Input`).value = config[x];
         d3.select(`#${x}`).text(config[x]);
       })
@@ -462,7 +474,7 @@
           .y(height * forceProperties.center.y);
         simulation
           .force('charge')
-          .strength(forceProperties.charge.strength * forceProperties.charge.enabled)
+          .strength(forceProperties.charge.strength * forceProperties.charge.enabled * config.zoom)
           .distanceMin(forceProperties.charge.distanceMin)
           .distanceMax(forceProperties.charge.distanceMax);
         simulation
@@ -473,7 +485,7 @@
         simulation
           .force('link')
           .id(d => d.id)
-          .distance(forceProperties.link.distance)
+          .distance(forceProperties.link.distance * config.zoom)
           .iterations(forceProperties.link.iterations)
           .links(forceProperties.link.enabled ? graph.links : []);
 
@@ -556,10 +568,10 @@
                 return 'grey';
             }
           })
-          .attr('stroke-width', 10);
+          .attr('stroke-width', 10 * config.zoom);
 
         link
-          .attr('stroke-width', d => d.games)
+          .attr('stroke-width', d => d.games * config.zoom)
           .attr('stroke', d => colors(Math.abs(d.score / d.games - 0.5) * 100))
           .attr('opacity', forceProperties.link.enabled ? 1 : 0);
         //console.log(node, link);
@@ -573,9 +585,6 @@
           .attr('x2', d => d.target.x)
           .attr('y2', d => d.target.y);
 
-        // node
-        //     .attr("cx", d =>  d.x)
-        //     .attr("cy", d => d.y);
         node.attr('transform', transform);
         if (config.nodeLabels) {
           text.attr('transform', transform);
@@ -605,7 +614,7 @@
       }
 
       // update size-related forces
-      d3.select(window).on('resize', function () {
+      d3.select(window).on('resize', () => {
         width = +svg.node().getBoundingClientRect().width;
         height = +svg.node().getBoundingClientRect().height;
         updateForces();
