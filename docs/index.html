@@ -197,7 +197,7 @@
         lichessId: urlParams.get('user') || 'german11',
         maxGame: 100,
         minVsGame: 2,
-        refresh: false,
+        refresh: true,
         enableAccountSeniority: false,
         accountSeniority: 200,
         search: false,
@@ -597,6 +597,7 @@
       //////////// UI EVENTS ////////////
 
       function dragstarted(d) {
+        simulation.stop()
         if (!d3.event.active) simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
         d.fy = d.y;
@@ -608,6 +609,7 @@
       }
 
       function dragended(d) {
+        force.resume()
         if (!d3.event.active) simulation.alphaTarget(0.0001);
         d.fx = null;
         d.fy = null;
