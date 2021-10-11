@@ -571,7 +571,7 @@
           .attr('stroke-width', 10 * config.zoom);
 
         link
-          .attr('stroke-width', d => d.games * config.zoom)
+          .attr('stroke-width', d => d.games)
           .attr('stroke', d => colors(Math.abs(d.score / d.games - 0.5) * 100))
           .attr('opacity', forceProperties.link.enabled ? 1 : 0);
         //console.log(node, link);
