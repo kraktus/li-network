@@ -1,0 +1,20 @@
+{
+  "name": "li-network",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "format": "prettier --write . --loglevel warn"
+  },
+  "devDependencies": {
+    "prettier": "^2.8.7",
+    "typescript": "^5.0.2",
+    "vite": "^4.3.0"
+  },
+  "dependencies": {
+    "snabbdom": "^3.5.1"
+  }
+}
