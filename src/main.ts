@@ -28,9 +28,6 @@ const lichessId = h('input', {
 });
 const startButton = h(
   'button.start',
-  {
-    attrs: { 'data-icon': '', type: 'button' },
-  },
   'test'
 );
 const newVnode = h('div', [lichessId, startButton]);
