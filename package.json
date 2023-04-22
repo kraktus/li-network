@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "format": "prettier --write . --loglevel warn"
+    "format": "onchange \"**/*\" -- prettier --write --loglevel warn --ignore-unknown {{changed}}"
   },
   "devDependencies": {
+    "onchange": "^7.1.0",
     "prettier": "^2.8.7",
     "typescript": "^5.0.2",
     "vite": "^4.3.0"

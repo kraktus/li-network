@@ -42,18 +42,27 @@ input {
   justify-content: center;
 }
 */
-.start {
+
+.chunky {
   padding-top: 25px;
   padding: 8px 20px;
   border-radius: 8px;
   color: #fff;
   text-decoration: none;
   width: 100%;
-  background: #82bf56;
   display: inline-block;
+  font-weight: bold;
+}
+
+.start {
+  background: #82bf56;
   border-bottom: 5px solid #759900;
   text-shadow: 0 -1px #759900;
-  font-weight: bold;
+}
+.pause {
+  background: #b4b4b4;
+  border-bottom: 5px solid #737373;
+  text-shadow: 0 -1px #737373;
 }
 
 html {

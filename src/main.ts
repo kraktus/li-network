@@ -4,6 +4,7 @@ import {
   init,
   classModule,
   propsModule,
+  attributesModule,
   styleModule,
   eventListenersModule,
   h,
@@ -14,27 +15,99 @@ const patch = init([
   // Init patch function with chosen modules
   classModule, // makes it easy to toggle classes
   propsModule, // for setting properties on DOM elements
+  attributesModule,
   styleModule, // handles styling on elements with support for animations
   eventListenersModule, // attaches event listeners
 ]);
 
-const container = document.getElementById('container')!;
-
 const controls = (...nodes: VNode[]) => h('div.controls', nodes);
 const force = (...nodes: VNode[]) => h('div.force', nodes);
 const label = (...nodes: VNode[]) => h('label', nodes);
+const strong = (v: string | VNode) => h('strong', v);
 
-// <input type="text" id="lichessId" autocomplete="off" />
+class Controller {
+  searchButtonLabel: 'Start' | 'Pause' | 'Restart';
+  searchOngoing: boolean;
+  lichessId: string;
+  old: HTMLElement | VNode;
 
-const lichessId = h('input', {
-  attrs: { name: 'lichessId', autocomplete: 'off' },
-});
-const startButton = h('div', h('button.start', 'Start'));
+  constructor(elem: HTMLElement) {
+    const urlParams = new URLSearchParams(window.location.search);
+    this.lichessId = urlParams.get('user') || 'german11';
+    this.searchButtonLabel = 'Start';
+    this.searchOngoing = false;
+    this.old = elem;
+  }
+  redraw() {
+    const node = this.view();
+    patch(this.old, node);
+    this.old = node;
+  }
+  view(): VNode {
+    let inputValue = this.lichessId;
+    const lichessIdInput = h('input', {
+      attrs: {
+        id: 'lichessId',
+        type: 'text',
+        autocomplete: 'off',
+        value: this.lichessId,
+      },
+      on: {
+        input: (e: any) => {
+          inputValue = (e.target as HTMLInputElement).value;
+          if (inputValue == this.lichessId) {
+            this.searchOngoing
+              ? (this.searchButtonLabel = 'Pause')
+              : (this.searchButtonLabel = 'Restart');
+          } else {
+            this.searchButtonLabel = 'Restart';
+          }
+          this.redraw();
+        },
+      },
+    });
+    const isPauseLabel = this.searchButtonLabel == 'Pause';
+    const startButton = h(
+      'div',
+      h(
+        'button.chunky',
+        {
+          class: {
+            pause: isPauseLabel,
+            start: !isPauseLabel,
+          },
+          on: {
+            click: () => {
+              this.lichessId = inputValue;
 
-const api = label(
-  h('strong', 'Api'),
-  h('div', 'Lichess username'),
-  lichessId,
-  startButton
-);
-patch(container, controls(force(api)));
+              if (this.searchButtonLabel == 'Restart') {
+                this.searchButtonLabel = 'Start';
+              } else {
+                if (this.searchButtonLabel == 'Pause') {
+                  this.searchButtonLabel = 'Start';
+                } else {
+                  this.searchButtonLabel = 'Pause';
+                }
+                this.searchOngoing = !this.searchOngoing;
+              }
+              this.redraw();
+            },
+          },
+        },
+        this.searchButtonLabel
+      )
+    );
+
+    const api = label(
+      strong('Api'),
+      h('div', 'Lichess username'),
+      lichessIdInput,
+      startButton
+    );
+    return controls(force(api));
+  }
+}
+
+const container = document.getElementById('container')!;
+const ctrl = new Controller(container);
+ctrl.redraw();
