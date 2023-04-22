@@ -29,7 +29,7 @@ const lichessId = h('input', {
 const startButton = h(
   'button.start',
   {
-    on: { click: console.log('test-bar') },
+    attrs: { 'data-icon': '', type: 'button' },
   },
   'test'
 );
