@@ -1,6 +1,14 @@
 import './style.css';
 
-import { init, classModule, propsModule, styleModule, eventListenersModule, h } from 'snabbdom';
+import {
+  init,
+  classModule,
+  propsModule,
+  styleModule,
+  eventListenersModule,
+  h,
+  VNode,
+} from 'snabbdom';
 
 const patch = init([
   // Init patch function with chosen modules
@@ -10,26 +18,23 @@ const patch = init([
   eventListenersModule, // attaches event listeners
 ]);
 
-const container = document.getElementById('container');
+const container = document.getElementById('container')!;
 
-const vnode = h('div#container.two.classes', { on: { click: console.log('test') } }, [
-  h('span', { style: { fontWeight: 'bold' } }, 'This is bold'),
-  ' and this is just normal text',
-  h('a', { props: { href: '/foo' } }, "I'll take you places!"),
-]);
-// Patch into empty DOM element – this modifies the DOM as a side effect
-patch(container, vnode);
+const controls = (...nodes: VNode[]) => h('div.controls', nodes);
+const force = (...nodes: VNode[]) => h('div.force', nodes);
+const label = (...nodes: VNode[]) => h('label', nodes);
 
 // <input type="text" id="lichessId" autocomplete="off" />
 
 const lichessId = h('input', {
-  on: { click: console.log('test-bar') },
-  attrs: { id: 'lichessId', autocomplete: 'off' },
+  attrs: { name: 'lichessId', autocomplete: 'off' },
 });
-const startButton = h(
-  'button.start',
-  'test'
+const startButton = h('div', h('button.start', 'Start'));
+
+const api = label(
+  h('strong', 'Api'),
+  h('div', 'Lichess username'),
+  lichessId,
+  startButton
 );
-const newVnode = h('div', [lichessId, startButton]);
-// Second `patch` invocation
-patch(vnode, newVnode); // Snabbdom efficiently updates the old view to the new state
+patch(container, controls(force(api)));

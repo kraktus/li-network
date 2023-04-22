@@ -13,14 +13,117 @@
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }*/
+
+/*      html {
+        width: 100%;
+      }
+      body {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        font-family: sans-serif;
+        font-size: 75%;
+      }
+
+.controls {
+        flex-basis: 200px;
+        padding: 0 5px;
+        background-color: #eee;
+        border-radius: 3px;
+        display: inline-block;
+        flex-direction: column;
+        margin: 5px 0;
+      }
+
+input {
+  display: inline-block;
+  width: 90%;
+  justify-content: center;
+}
+*/
 .start {
-  position: absolute;
-  top: -3px;
+  padding-top: 25px;
   padding: 8px 20px;
   border-radius: 8px;
   color: #fff;
   text-decoration: none;
+  width: 100%;
   background: #82bf56;
+  display: inline-block;
   border-bottom: 5px solid #759900;
   text-shadow: 0 -1px #759900;
+  font-weight: bold;
+}
+
+html {
+  width: 100%;
+}
+body {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  font-family: sans-serif;
+  font-size: 75%;
+}
+.controls {
+  flex-basis: 180px;
+  padding: 0 5px;
+}
+.controls .force {
+  background-color: #eee;
+  border-radius: 3px;
+  padding: 5px;
+  margin: 5px 0;
+}
+.controls .force p label {
+  margin-right: 0.5em;
+  font-size: 120%;
+  font-weight: bold;
+}
+.controls .force p {
+  margin-top: 0;
+}
+.controls .force label {
+  display: inline-block;
+}
+.controls input[type='checkbox'] {
+  transform: scale(1.2, 1.2);
+}
+.controls input[type='range'] {
+  margin: 0 5% 0.5em 5%;
+  width: 90%;
+}
+/* alpha viewer */
+.controls .alpha p {
+  margin-bottom: 0.25em;
+}
+.controls .alpha .alpha_bar {
+  height: 0.5em;
+  border: 1px #777 solid;
+  border-radius: 2px;
+  padding: 1px;
+  display: flex;
+}
+.controls .alpha .alpha_bar #alpha_value {
+  background-color: #555;
+  border-radius: 1px;
+  flex-basis: 100%;
+}
+.controls .alpha .alpha_bar:hover {
+  border-width: 2px;
+  margin: -1px;
+}
+.controls .alpha .alpha_bar:active #alpha_value {
+  background-color: #222;
+}
+
+/* SVG styles */
+svg {
+  flex-basis: 100%;
+  min-width: 200px;
+}
+.nodes circle {
+  pointer-events: all;
 }
