@@ -39,9 +39,7 @@ class Controller {
     this.old = elem;
   }
   redraw() {
-    const node = this.view();
-    patch(this.old, node);
-    this.old = node;
+    this.old = patch(this.old, this.view());
   }
   view(): VNode {
     let inputValue = this.lichessId;
@@ -108,6 +106,7 @@ class Controller {
   }
 }
 
+console.log('v0.2-dev');
 const container = document.getElementById('container')!;
 const ctrl = new Controller(container);
 ctrl.redraw();
