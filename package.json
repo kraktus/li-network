@@ -16,6 +16,7 @@
     "vite": "^4.3.0"
   },
   "dependencies": {
+    "d3-force": "^3.0.0",
     "snabbdom": "^3.5.1"
   }
 }
