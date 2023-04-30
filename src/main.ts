@@ -1,4 +1,5 @@
 import './style.css';
+import './graph.ts';
 
 import {
   init,
