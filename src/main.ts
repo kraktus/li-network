@@ -26,36 +26,44 @@ const force = (...nodes: VNode[]) => h('div.force', nodes);
 const label = (...nodes: VNode[]) => h('label', nodes);
 const strong = (v: string | VNode) => h('strong', v);
 
-class Controller {
-  searchButtonLabel: 'Start' | 'Pause' | 'Restart';
+export interface Config {
   searchOngoing: boolean;
   lichessId: string;
+}
+
+export const defaultConfig: Config = {
+  lichessId:
+    new URLSearchParams(window.location.search).get('user') || 'german11',
+  searchOngoing: false,
+};
+
+class Controller {
+  searchButtonLabel: 'Start' | 'Pause' | 'Restart';
+  config: Config;
   old: HTMLElement | VNode;
 
   constructor(elem: HTMLElement) {
-    const urlParams = new URLSearchParams(window.location.search);
-    this.lichessId = urlParams.get('user') || 'german11';
+    this.config = defaultConfig;
     this.searchButtonLabel = 'Start';
-    this.searchOngoing = false;
     this.old = elem;
   }
   redraw() {
     this.old = patch(this.old, this.view());
   }
   view(): VNode {
-    let inputValue = this.lichessId;
+    let inputValue = this.config.lichessId;
     const lichessIdInput = h('input', {
       attrs: {
         id: 'lichessId',
         type: 'text',
         autocomplete: 'off',
-        value: this.lichessId,
+        value: this.config.lichessId,
       },
       on: {
         input: (e: any) => {
           inputValue = (e.target as HTMLInputElement).value;
-          if (inputValue == this.lichessId) {
-            this.searchOngoing
+          if (inputValue == this.config.lichessId) {
+            this.config.searchOngoing
               ? (this.searchButtonLabel = 'Pause')
               : (this.searchButtonLabel = 'Restart');
           } else {
@@ -77,7 +85,7 @@ class Controller {
           },
           on: {
             click: () => {
-              this.lichessId = inputValue;
+              this.config.lichessId = inputValue;
 
               if (this.searchButtonLabel == 'Restart') {
                 this.searchButtonLabel = 'Start';
@@ -87,7 +95,7 @@ class Controller {
                 } else {
                   this.searchButtonLabel = 'Pause';
                 }
-                this.searchOngoing = !this.searchOngoing;
+                this.config.searchOngoing = !this.config.searchOngoing;
               }
               this.redraw();
             },
