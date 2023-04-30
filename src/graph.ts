@@ -1,6 +1,7 @@
 //import { select } from 'd3-selection';
 import * as d3 from 'd3';
 import { Config, defaultConfig } from './config.ts';
+import { Data, PlayerNode } from './data.ts';
 
 interface Node extends d3.SimulationNodeDatum {
   id: string;
@@ -55,8 +56,6 @@ const links: Link[] = [
 ];
 
 class Graph {
-  //readonly config: Config;
-
   svg: any;
   // SVG Elements
   linkElements: any;
@@ -67,9 +66,10 @@ class Graph {
   nodeGroup: any;
   textGroup: any;
   simulation: any;
+  data: Data;
 
   constructor(readonly config: Config) {
-    //this.config = config;
+    this.data = Data(config);
     this.svg = d3.select('svg');
     this.svg.attr('width', width).attr('height', height);
     this.svg.append('g').attr('class', 'links');
@@ -91,23 +91,26 @@ class Graph {
   private updateGraph() {
     this.linkElements = this.linkGroup
       .selectAll('line')
-      .data(links, (link: any) => link.target.id + link.source.id)
+      .data(
+        Object.values(this.data.links),
+        (link: any) => link.source.id + link.target.id
+      )
       .join('line')
       .attr('stroke-width', 1)
       .attr('stroke', 'rgba(50, 50, 50, 0.2)');
 
     this.nodeElements = this.nodeGroup
       .selectAll('circle')
-      .data(nodes, (node: any) => node.id)
+      .data(Object.values(this.data.nodes), (node: any) => node.userId)
       .join('circle')
-      .attr('r', 10)
-      .attr('fill', (node: Node) => (node.level === 1 ? 'red' : 'gray'));
+      .attr('r', 10);
+    //.attr('fill', (node: Node) => (node.level === 1 ? 'red' : 'gray'));
 
     this.textElements = this.textGroup
       .selectAll('text')
-      .data(nodes, (node: any) => node.id)
+      .data(Object.values(this.data.nodes), (node: any) => node.userId)
       .join('text')
-      .text((node: Node) => node.label)
+      .text((node: PlayerNode) => node.userId)
       .attr('font-size', 15)
       .attr('dx', 15)
       .attr('dy', 4);
