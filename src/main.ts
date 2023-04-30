@@ -1,6 +1,7 @@
 import './style.css';
 import './graph.ts';
 import { Config, defaultConfig } from './config.ts';
+import { Graph } from './graph.ts';
 
 import {
   init,
@@ -30,10 +31,12 @@ const strong = (v: string | VNode) => h('strong', v);
 class Controller {
   searchButtonLabel: 'Start' | 'Pause' | 'Restart';
   config: Config;
+  graph: Graph;
   old: HTMLElement | VNode;
 
   constructor(elem: HTMLElement) {
     this.config = defaultConfig;
+    this.graph = new Graph(this.config);
     this.searchButtonLabel = 'Start';
     this.old = elem;
   }
@@ -74,11 +77,11 @@ class Controller {
             start: !isPauseLabel,
           },
           on: {
-            click: () => {
+            click: async () => {
               this.config.lichessId = inputValue;
 
               if (this.searchButtonLabel == 'Restart') {
-                this.searchButtonLabel = 'Start';
+                this.searchButtonLabel = 'Pause';
               } else {
                 if (this.searchButtonLabel == 'Pause') {
                   this.searchButtonLabel = 'Start';
@@ -86,6 +89,9 @@ class Controller {
                   this.searchButtonLabel = 'Pause';
                 }
                 this.config.searchOngoing = !this.config.searchOngoing;
+              }
+              if (this.config.searchOngoing) {
+                await this.graph.start();
               }
               this.redraw();
             },

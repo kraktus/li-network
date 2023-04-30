@@ -3,59 +3,10 @@ import * as d3 from 'd3';
 import { Config, defaultConfig } from './config.ts';
 import { Data, PlayerNode } from './data.ts';
 
-interface Node extends d3.SimulationNodeDatum {
-  id: string;
-  group: number;
-  label: string;
-  level: number;
-}
-
-interface Link extends d3.SimulationLinkDatum<Node> {
-  strength: number;
-}
-
 const width = window.innerWidth;
 const height = window.innerHeight;
 
-const nodes: Node[] = [
-  { id: 'mammal', group: 0, label: 'Mammals', level: 1 },
-  { id: 'dog', group: 0, label: 'Dogs', level: 2 },
-  { id: 'cat', group: 0, label: 'Cats', level: 2 },
-  { id: 'fox', group: 0, label: 'Foxes', level: 2 },
-  { id: 'elk', group: 0, label: 'Elk', level: 2 },
-  { id: 'insect', group: 1, label: 'Insects', level: 1 },
-  { id: 'ant', group: 1, label: 'Ants', level: 2 },
-  { id: 'bee', group: 1, label: 'Bees', level: 2 },
-  {
-    id: 'fish',
-    group: 2,
-    label: 'Fish',
-    level: 1,
-    fx: width / 2,
-    fy: height / 2,
-  },
-  { id: 'carp', group: 2, label: 'Carp', level: 2 },
-  { id: 'pike', group: 2, label: 'Pikes', level: 2 },
-];
-
-const links: Link[] = [
-  { target: 'mammal', source: 'dog', strength: 0.7 },
-  { target: 'mammal', source: 'cat', strength: 0.7 },
-  { target: 'mammal', source: 'fox', strength: 0.7 },
-  { target: 'mammal', source: 'elk', strength: 0.7 },
-  { target: 'insect', source: 'ant', strength: 0.7 },
-  { target: 'insect', source: 'bee', strength: 0.7 },
-  { target: 'fish', source: 'carp', strength: 0.7 },
-  { target: 'fish', source: 'pike', strength: 0.7 },
-  { target: 'cat', source: 'elk', strength: 0.1 },
-  { target: 'carp', source: 'ant', strength: 0.1 },
-  { target: 'elk', source: 'bee', strength: 0.1 },
-  { target: 'dog', source: 'cat', strength: 0.1 },
-  { target: 'fox', source: 'ant', strength: 0.1 },
-  { target: 'pike', source: 'cat', strength: 0.1 },
-];
-
-class Graph {
+export class Graph {
   svg: any;
   // SVG Elements
   linkElements: any;
@@ -67,6 +18,8 @@ class Graph {
   textGroup: any;
   simulation: any;
   data: Data;
+
+  intervalId?: ReturnType<typeof setInterval>;
 
   constructor(readonly config: Config) {
     this.data = new Data(config);
@@ -133,16 +86,30 @@ class Graph {
     );
   }
 
+  async start() {
+    if (this.intervalId) {
+      clearInterval(this.intervalId);
+    }
+    await this.data.startSearch();
+    this.intervalId = setInterval(() => {
+      if (this.config.searchOngoing) {
+        this.redraw();
+      } else {
+        clearInterval(this.intervalId);
+      }
+    }, 2000);
+  }
+
   redraw() {
     this.updateGraph();
 
-    this.simulation.nodes(nodes).on('tick', () => {
+    this.simulation.nodes(Object.values(this.data.nodes)).on('tick', () => {
       this.nodeElements
-        .attr('cx', (node: Node) => node.x)
-        .attr('cy', (node: Node) => node.y);
+        .attr('cx', (node: PlayerNode) => node.x)
+        .attr('cy', (node: PlayerNode) => node.y);
       this.textElements
-        .attr('x', (node: Node) => node.x)
-        .attr('y', (node: Node) => node.y);
+        .attr('x', (node: PlayerNode) => node.x)
+        .attr('y', (node: PlayerNode) => node.y);
       this.linkElements
         .attr('x1', (link: any) => link.source.x)
         .attr('y1', (link: any) => link.source.y)
@@ -151,7 +118,7 @@ class Graph {
     });
 
     // @ts-ignore
-    this.simulation.force('link')!.links(links);
+    this.simulation.force('link')!.links(Object.values(this.data.links));
     this.simulation.alphaTarget(0.7).restart();
   }
 }
