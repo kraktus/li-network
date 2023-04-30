@@ -12,6 +12,9 @@ interface Link extends d3.SimulationLinkDatum<Node> {
   strength: number;
 }
 
+const width = window.innerWidth;
+const height = window.innerHeight;
+
 const baseNodes: Node[] = [
   { id: 'mammal', group: 0, label: 'Mammals', level: 1 },
   { id: 'dog', group: 0, label: 'Dogs', level: 2 },
@@ -21,7 +24,14 @@ const baseNodes: Node[] = [
   { id: 'insect', group: 1, label: 'Insects', level: 1 },
   { id: 'ant', group: 1, label: 'Ants', level: 2 },
   { id: 'bee', group: 1, label: 'Bees', level: 2 },
-  { id: 'fish', group: 2, label: 'Fish', level: 1 },
+  {
+    id: 'fish',
+    group: 2,
+    label: 'Fish',
+    level: 1,
+    fx: width / 2,
+    fy: height / 2,
+  },
   { id: 'carp', group: 2, label: 'Carp', level: 2 },
   { id: 'pike', group: 2, label: 'Pikes', level: 2 },
 ];
@@ -87,9 +97,6 @@ function getTextColor(node: Node, neighbors: any) {
     ? 'green'
     : 'black';
 }
-
-const width = window.innerWidth;
-const height = window.innerHeight;
 
 const svg = d3.select('svg');
 svg.attr('width', width).attr('height', height);
