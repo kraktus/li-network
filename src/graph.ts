@@ -1,6 +1,6 @@
 //import { select } from 'd3-selection';
 import * as d3 from 'd3';
-import { Config, defaultConfig } from './main.ts';
+import { Config, defaultConfig } from './config.ts';
 
 interface Node extends d3.SimulationNodeDatum {
   id: string;
@@ -69,6 +69,7 @@ class Graph {
   simulation: any;
 
   constructor(readonly config: Config) {
+    //this.config = config;
     this.svg = d3.select('svg');
     this.svg.attr('width', width).attr('height', height);
     this.svg.append('g').attr('class', 'links');
@@ -111,10 +112,10 @@ class Graph {
       .attr('dx', 15)
       .attr('dy', 4);
 
-    const zoomed = (x: any) => {
-      this.nodeGroup.attr('transform', x.transform);
-      this.linkGroup.attr('transform', x.transform);
-      this.textElements.attr('transform', x.transform);
+    const zoomed = ({ transform }: any) => {
+      this.nodeGroup.attr('transform', transform);
+      this.linkGroup.attr('transform', transform);
+      this.textElements.attr('transform', transform);
     };
 
     this.svg.call(
@@ -154,4 +155,6 @@ class Graph {
 
 // last but not least, we call updateSimulation
 // to trigger the initial render
-new Graph(defaultConfig).redraw();
+//const x = defaultConfig;
+const graph = new Graph(defaultConfig); //{ lichessId: 'foo', searchOngoing: false });
+graph.redraw();
