@@ -68,14 +68,16 @@ export class Data {
     });
   }
 
-  startSearch() {
+  async startSearch() {
     while (this.config.searchOngoing) {
       const userId = this.chooseNewPlayerDl();
-      getGames(userId, this.config.maxGame, this.onGame);
+      this.nodes[userId].alreadyDl = true;
+      await getGames(userId, this.config.maxGame, this.onGame.bind(this));
+
       const usersWithoutInfo = Object.values(this.nodes)
         .filter((node: PlayerNode) => node.info === undefined)
         .map((node: PlayerNode) => node.userId);
-      chunkArray(usersWithoutInfo, 300).forEach(this.getInfo);
+      chunkArray(usersWithoutInfo, 300).forEach(this.getInfo.bind(this));
     }
   }
 

@@ -48,5 +48,5 @@ export async function getInfo(playerIds: string[]) {
     method: 'POST',
     body: playerIds.join(),
   });
-  return response.json();
+  return await response.json();
 }
