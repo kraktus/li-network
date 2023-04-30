@@ -1,5 +1,6 @@
 import './style.css';
 import './graph.ts';
+import { Config, defaultConfig } from './config.ts';
 
 import {
   init,
@@ -25,17 +26,6 @@ const controls = (...nodes: VNode[]) => h('div.controls', nodes);
 const force = (...nodes: VNode[]) => h('div.force', nodes);
 const label = (...nodes: VNode[]) => h('label', nodes);
 const strong = (v: string | VNode) => h('strong', v);
-
-export interface Config {
-  searchOngoing: boolean;
-  lichessId: string;
-}
-
-export const defaultConfig: Config = {
-  lichessId:
-    new URLSearchParams(window.location.search).get('user') || 'german11',
-  searchOngoing: false,
-};
 
 class Controller {
   searchButtonLabel: 'Start' | 'Pause' | 'Restart';
