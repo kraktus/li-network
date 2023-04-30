@@ -69,7 +69,7 @@ class Graph {
   data: Data;
 
   constructor(readonly config: Config) {
-    this.data = Data(config);
+    this.data = new Data(config);
     this.svg = d3.select('svg');
     this.svg.attr('width', width).attr('height', height);
     this.svg.append('g').attr('class', 'links');

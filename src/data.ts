@@ -1,11 +1,15 @@
 import * as d3 from 'd3';
-import { getInfo } from './lichess.ts';
+import { getInfo, getGames } from './lichess.ts';
+
+interface Info {
+  status: 'tos' | 'disabled' | 'good';
+  games: number; // number of games this user has played on Lichess
+}
 
 export interface PlayerNode extends d3.SimulationNodeDatum {
   userId: string; // lichess id
-  status: 'tos' | 'disabled' | 'good' | undefined;
-  alreadyDl: boolean;
-  games: number; // number of games this user has played on Lichess
+  info?: Info;
+  alreadyDl: boolean; // if the games of the players have already been imported, not the info!
   involvement: number; // number of games this user has played against other players of the network
 }
 
@@ -35,25 +39,42 @@ export class Data {
   getInfo(playerIds: string[]) {
     getInfo(playerIds).then((res: any) => {
       res.map((user: any) => {
-        //console.log("user api status", user)
         if (user.tosViolation) {
-          this.nodes[user.id].status = 'tos';
+          const status = 'tos';
         } else if (user.disabled) {
-          this.nodes[user.id].status = 'disabled';
+          const status = 'disabled';
         } else {
-          this.nodes[user.id].status = 'good';
+          const status = 'good';
         }
         try {
-          this.nodes[user.id].games = Object.keys(user.perfs)
+          const games = Object.keys(user.perfs)
             .filter(x => !['puzzle', 'storm', 'streak', 'racer'].includes(x))
             .map(perfT => user.perfs[perfT].games)
             .reduce((a, b) => a + b);
         } catch (e) {
-          this.nodes[user.id].games = 0;
+          const games = 0;
           console.error(e, 'when trying to count games of ', user.id, user);
         }
+        this.nodes[user.id].info = {
+          status: status,
+          games: games,
+        };
       });
     });
+  }
+
+  startSearch() {
+    while (this.config.searchOngoing) {
+      const userId = this.chooseNewPlayerDl();
+      getGames(userId, config.maxGame, this.onGame);
+    }
+  }
+
+  private chooseNewPlayerDl(): string {
+    Object.entries(this.nodes)
+      .filter((_: string, playerNode: PlayerNode) => !playerNode.alreadyDl)
+      .max((_: string, playerNode: PlayerNode) => playerNode.involvement)
+      .map((userId: string, _: PlayerNode) => userId);
   }
 
   private onGame(game: any) {
