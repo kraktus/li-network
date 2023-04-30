@@ -259,6 +259,23 @@ function updateGraph() {
     .attr('font-size', 15)
     .attr('dx', 15)
     .attr('dy', 4);
+
+  svg.call(
+    d3
+      .zoom()
+      .extent([
+        [0, 0],
+        [width, height],
+      ])
+      .scaleExtent([1, 8])
+      .on('zoom', zoomed)
+  );
+
+  function zoomed({ transform }) {
+    nodeGroup.attr('transform', transform);
+    linkGroup.attr('transform', transform);
+    textElements.attr('transform', transform);
+  }
 }
 
 function updateSimulation() {
