@@ -31,16 +31,6 @@ const readStream = processLine => response => {
   return loop();
 };
 
-function chunkArray<T>(myArray: T[], chunk_size: number): T[][] {
-  let index = 0;
-  let buf = [];
-  for (index = 0; index < myArray.length; index += chunk_size) {
-    const myChunk = myArray.slice(index, index + chunk_size);
-    buf.push(myChunk);
-  }
-  return buf;
-}
-
 export async function getGames(
   userId: string,
   maxGame: number,

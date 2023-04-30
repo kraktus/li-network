@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { Config } from './config.ts';
 import { getInfo, getGames } from './lichess.ts';
 
 interface Info {
@@ -30,29 +31,33 @@ export class Data {
     this.nodes = {};
     this.nodes[config.lichessId] = {
       userId: config.lichessId,
-      fx: width / 2,
-      fy: height / 2,
+      fx: window.innerWidth / 2,
+      fy: window.innerHeight / 2,
+      alreadyDl: false,
+      involvement: 0,
     };
     this.links = {};
   }
 
-  getInfo(playerIds: string[]) {
+  private getInfo(playerIds: string[]) {
     getInfo(playerIds).then((res: any) => {
       res.map((user: any) => {
+        let status: 'tos' | 'disabled' | 'good';
+        let games;
         if (user.tosViolation) {
-          const status = 'tos';
+          status = 'tos';
         } else if (user.disabled) {
-          const status = 'disabled';
+          status = 'disabled';
         } else {
-          const status = 'good';
+          status = 'good';
         }
         try {
-          const games = Object.keys(user.perfs)
+          games = Object.keys(user.perfs)
             .filter(x => !['puzzle', 'storm', 'streak', 'racer'].includes(x))
             .map(perfT => user.perfs[perfT].games)
             .reduce((a, b) => a + b);
         } catch (e) {
-          const games = 0;
+          games = 0;
           console.error(e, 'when trying to count games of ', user.id, user);
         }
         this.nodes[user.id].info = {
@@ -66,15 +71,23 @@ export class Data {
   startSearch() {
     while (this.config.searchOngoing) {
       const userId = this.chooseNewPlayerDl();
-      getGames(userId, config.maxGame, this.onGame);
+      getGames(userId, this.config.maxGame, this.onGame);
+      const usersWithoutInfo = Object.values(this.nodes)
+        .filter((node: PlayerNode) => node.info === undefined)
+        .map((node: PlayerNode) => node.userId);
+      chunkArray(usersWithoutInfo, 300).forEach(this.getInfo);
     }
   }
 
   private chooseNewPlayerDl(): string {
-    Object.entries(this.nodes)
-      .filter((_: string, playerNode: PlayerNode) => !playerNode.alreadyDl)
-      .max((_: string, playerNode: PlayerNode) => playerNode.involvement)
-      .map((userId: string, _: PlayerNode) => userId);
+    return (
+      Object.entries(this.nodes)
+        .filter(entry => !entry[1].alreadyDl)
+        // max_by of the poor
+        .reduce((p1, p2) =>
+          p1[1].involvement > p2[1].involvement ? p1 : p2
+        )[0]
+    );
   }
 
   private onGame(game: any) {
@@ -124,4 +137,14 @@ export class Data {
     }
     this.links[linkId] = playerLink;
   }
+}
+
+function chunkArray<T>(myArray: T[], chunk_size: number): T[][] {
+  let index = 0;
+  let buf = [];
+  for (index = 0; index < myArray.length; index += chunk_size) {
+    const myChunk = myArray.slice(index, index + chunk_size);
+    buf.push(myChunk);
+  }
+  return buf;
 }
