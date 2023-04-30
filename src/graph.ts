@@ -8,6 +8,10 @@ interface Node extends d3.SimulationNodeDatum {
   level: number;
 }
 
+interface Link extends d3.SimulationLinkDatum<Node> {
+  strength: number;
+}
+
 const baseNodes: Node[] = [
   { id: 'mammal', group: 0, label: 'Mammals', level: 1 },
   { id: 'dog', group: 0, label: 'Dogs', level: 2 },
@@ -22,7 +26,7 @@ const baseNodes: Node[] = [
   { id: 'pike', group: 2, label: 'Pikes', level: 2 },
 ];
 
-const baseLinks = [
+const baseLinks: Link[] = [
   { target: 'mammal', source: 'dog', strength: 0.7 },
   { target: 'mammal', source: 'cat', strength: 0.7 },
   { target: 'mammal', source: 'fox', strength: 0.7 },
@@ -43,8 +47,10 @@ const nodes = [...baseNodes];
 let links = [...baseLinks];
 
 function getNeighbors(node: Node) {
+  console.log('selected node', node);
   return baseLinks.reduce(
-    function (neighbors, link) {
+    function (neighbors: string[], link: Link) {
+      console.log(link);
       // @ts-ignore
       if (link.target.id === node.id) {
         // @ts-ignore
@@ -64,8 +70,8 @@ function isNeighborLink(node: Node, link: any) {
   return link.target.id === node.id || link.source.id === node.id;
 }
 
-function getNodeColor(node: Node, neighbors: any) {
-  if (Array.isArray(neighbors) && neighbors.indexOf(node.id) > -1) {
+function getNodeColor(node: Node, neighbors: string[]) {
+  if (neighbors.indexOf(node.id) > -1) {
     return node.level === 1 ? 'blue' : 'green';
   }
 
@@ -139,10 +145,7 @@ const simulation = d3
 // select node is called on every click
 // we either update the data according to the selection
 // or reset the data if the same node is clicked twice
-function selectNode(event: MouseEvent) {
-  console.log('click');
-  console.log(event);
-  const selectedNode = event.srcElement as unknown as Node;
+function selectNode(_: MouseEvent, selectedNode: Node) {
   if (selectedId === selectedNode.id) {
     selectedId = undefined;
     resetData();
@@ -154,6 +157,7 @@ function selectNode(event: MouseEvent) {
   }
 
   const neighbors = getNeighbors(selectedNode);
+  console.log('neighbors', neighbors);
 
   // we modify the styles to highlight selected nodes
   nodeElements.attr('fill', function (node: Node) {
@@ -162,7 +166,7 @@ function selectNode(event: MouseEvent) {
   textElements.attr('fill', function (node: Node) {
     return getTextColor(node, neighbors);
   });
-  linkElements.attr('stroke', function (link: any) {
+  linkElements.attr('stroke', function (link: Link) {
     return getLinkColor(selectedNode, link);
   });
 }
@@ -215,30 +219,19 @@ function updateData(selectedNode: Node) {
 
 function updateGraph() {
   // links
-  linkElements = linkGroup.selectAll('line').data(links, function (link: any) {
-    return link.target.id + link.source.id;
-  });
-
-  linkElements.exit().remove();
-
-  const linkEnter = linkElements
-    .enter()
-    .append('line')
+  linkElements = linkGroup
+    .selectAll('line')
+    .data(links, function (link: any) {
+      return link.target.id + link.source.id;
+    })
+    .join('line')
     .attr('stroke-width', 1)
     .attr('stroke', 'rgba(50, 50, 50, 0.2)');
-
-  linkElements = linkEnter.merge(linkElements);
-
   // nodes
   nodeElements = nodeGroup
     .selectAll('circle')
-    .data(nodes, (node: any) => node.id);
-
-  nodeElements.exit().remove();
-
-  const nodeEnter = nodeElements
-    .enter()
-    .append('circle')
+    .data(nodes, (node: any) => node.id)
+    .join('circle')
     .attr('r', 10)
     .attr('fill', function (node: Node) {
       return node.level === 1 ? 'red' : 'gray';
@@ -248,26 +241,17 @@ function updateGraph() {
     // to update the graph on every click
     .on('click', selectNode);
 
-  nodeElements = nodeEnter.merge(nodeElements);
-
   // texts
   textElements = textGroup
     .selectAll('text')
-    .data(nodes, (node: any) => node.id);
-
-  textElements.exit().remove();
-
-  const textEnter = textElements
-    .enter()
-    .append('text')
+    .data(nodes, (node: any) => node.id)
+    .join('text')
     .text(function (node: Node) {
       return node.label;
     })
     .attr('font-size', 15)
     .attr('dx', 15)
     .attr('dy', 4);
-
-  textElements = textEnter.merge(textElements);
 }
 
 function updateSimulation() {
