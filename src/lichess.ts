@@ -41,17 +41,17 @@ function chunkArray<T>(myArray: T[], chunk_size: number): T[][] {
   return buf;
 }
 
-const getGames = (
+export async function getGames(
   userId: string,
   maxGame: number,
   handler: (game: any) => void
-) => {
+) {
   console.log('player searching', userId);
-  fetch(
+  return await fetch(
     `https://lichess.org/api/games/user/${userId}?max=${maxGame}&rated=true&tags=false`,
     options
   ).then(readStream(handler));
-};
+}
 
 export async function getInfo(playerIds: string[]) {
   const response = await fetch('https://lichess.org/api/users', {
