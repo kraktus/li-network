@@ -57,9 +57,25 @@ export class Graph {
       .data(nodes, (node: PlayerNode) => node.userId)
       .join('circle')
       .attr('r', 10)
-      .attr('fill', (node: PlayerNode) =>
-        node.userId === this.config.lichessId ? 'blue' : 'gray'
+      .attr('fill', (node: PlayerNode) => {
+        if (node.userId == this.config.lichessId) {
+          return 'blue';
+        }
+        switch (node.info?.status) {
+          case 'tos':
+            return 'orange';
+          case 'disabled':
+            return 'black';
+          case 'good':
+            return 'green';
+          case undefined:
+            return 'grey';
+        }
+      })
+      .on('click', (_: MouseEvent, node: PlayerNode) =>
+        window.open(`https://lichess.org/@/${node.userId}`, '_blank')
       );
+
     console.log('nodeElements', this.nodeElements);
 
     if (this.config.showUsernames) {
