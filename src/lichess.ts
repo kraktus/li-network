@@ -33,14 +33,23 @@ const readStream = processLine => response => {
 
 export async function getGames(
   userId: string,
-  maxGame: number,
-  handler: (game: any) => void
+  maxGame: number
+  //handler: (game: any) => void
 ) {
   console.log('player searching', userId);
-  return await fetch(
+  const response = await fetch(
     `https://lichess.org/api/games/user/${userId}?max=${maxGame}&rated=true&tags=false`,
     options
-  ).then(readStream(handler));
+  );
+  console.log('to text');
+  const text = await response.text();
+  console.log(text);
+  console.log('to games');
+  console.log(text.split('\n'));
+  let gamesArray = text.split('\n');
+  gamesArray.pop(); // last line is empty
+  console.log('after games');
+  return gamesArray.map(t => JSON.parse(t));
 }
 
 export async function getInfo(playerIds: string[]) {
