@@ -90,7 +90,6 @@ export class Graph {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
-    await this.data.startSearch();
     this.intervalId = setInterval(() => {
       if (this.config.searchOngoing) {
         this.redraw();
@@ -98,6 +97,7 @@ export class Graph {
         clearInterval(this.intervalId);
       }
     }, 2000);
+    await this.data.startSearch();
   }
 
   redraw() {
