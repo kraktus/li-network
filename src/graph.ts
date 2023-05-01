@@ -29,11 +29,9 @@ export class Graph {
     this.linkGroup = this.svg.append('g').attr('class', 'links');
     this.nodeGroup = this.svg.append('g').attr('class', 'nodes');
     this.textGroup = this.svg.append('g').attr('class', 'texts');
-    // simulation setup with all forces
-    const linkForce = d3
-      .forceLink()
-      .id((link: any) => link.id)
-      .strength((link: any) => link.strength);
+    // how does link `source` and `target` correlates to `nodes`
+    const linkForce = d3.forceLink().id((node: any) => node.userId);
+    //.strength((link: any) => link.strength);
     this.simulation = d3
       .forceSimulation()
       .force('link', linkForce)
@@ -58,6 +56,7 @@ export class Graph {
       .join('circle')
       .attr('r', 10);
     //.attr('fill', (node: Node) => (node.level === 1 ? 'red' : 'gray'));
+    console.log('nodeElements', this.nodeElements);
 
     this.textElements = this.textGroup
       .selectAll('text')
@@ -103,7 +102,15 @@ export class Graph {
   }
 
   redraw() {
-    this.updateGraph();
+    if (!this.data.drawable) {
+      console.warn('data race! Not updating the graph');
+    }
+    try {
+      this.updateGraph();
+    } catch (e) {
+      console.error('during update graph', e);
+    }
+
     console.log(
       'nodes',
       JSON.stringify(Object.values(this.data.nodes).slice(0, 2))
@@ -125,7 +132,11 @@ export class Graph {
     });
 
     // @ts-ignore
-    this.simulation.force('link')!.links(Object.values(this.data.links));
+    try {
+      this.simulation.force('link')!.links(Object.values(this.data.links));
+    } catch (e) {
+      console.error('during force link', e);
+    }
     this.simulation.alphaTarget(0.7).restart();
   }
 }

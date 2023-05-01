@@ -8,5 +8,5 @@ export const defaultConfig = {
   lichessId:
     new URLSearchParams(window.location.search).get('user') || 'german11',
   searchOngoing: false,
-  maxGame: 200,
+  maxGame: 3,
 };
