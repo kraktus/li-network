@@ -31,7 +31,10 @@ export class Graph {
     this.nodeGroup = this.svg.append('g').attr('class', 'nodes');
     this.textGroup = this.svg.append('g').attr('class', 'texts');
     // how does link `source` and `target` correlates to `nodes`
-    const linkForce = d3.forceLink().id((node: any) => node.userId);
+    const linkForce = d3
+      .forceLink()
+      .id((node: any) => node.userId)
+      .distance(30);
     //.strength((link: any) => link.strength);
     this.simulation = d3
       .forceSimulation()
@@ -42,6 +45,8 @@ export class Graph {
 
   // filtered out nodes and links
   private updateGraph(nodes: PlayerNode[], links: GameLink[]) {
+    const colors = d3.scaleLinear().domain([0, 50]).range(['grey', 'red']);
+
     this.linkElements = this.linkGroup
       .selectAll('line')
       .data(
@@ -49,8 +54,16 @@ export class Graph {
         (link: GameLink<PlayerNode>) => link.source.userId + link.target.userId
       )
       .join('line')
-      .attr('stroke-width', 1)
-      .attr('stroke', 'rgba(50, 50, 50, 0.2)');
+      .attr('stroke-width', (link: GameLink<PlayerNode>) => link.games)
+      .attr('stroke', (link: GameLink<PlayerNode>) =>
+        colors(Math.abs(link.score / link.games - 0.5) * 100)
+      )
+      .on('click', (_: MouseEvent, link: GameLink<PlayerNode>) => {
+        window.open(
+          `https://lichess.org/@/${link.source.userId}/search?players.a=${link.source.userId}&players.b=${link.target.userId}&mode=1`,
+          '_blank'
+        );
+      });
 
     this.nodeElements = this.nodeGroup
       .selectAll('circle')
