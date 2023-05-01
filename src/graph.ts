@@ -1,7 +1,7 @@
 //import { select } from 'd3-selection';
 import * as d3 from 'd3';
 import { Config } from './config.ts';
-import { Data, PlayerNode } from './data.ts';
+import { Data, PlayerNode, GameLink } from './data.ts';
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -24,6 +24,7 @@ export class Graph {
   constructor(readonly config: Config) {
     this.data = new Data(config);
     this.svg = d3.select('svg');
+    this.svg.selectAll('*').remove();
     this.svg.attr('width', width).attr('height', height);
     this.svg.append('g').attr('class', 'links');
     this.linkGroup = this.svg.append('g').attr('class', 'links');
@@ -39,12 +40,13 @@ export class Graph {
       .force('center', d3.forceCenter(width / 2, height / 2));
   }
 
-  private updateGraph() {
+  // filtered out nodes and links
+  private updateGraph(nodes: PlayerNode[], links: GameLink[]) {
     this.linkElements = this.linkGroup
       .selectAll('line')
       .data(
-        Object.values(this.data.links),
-        (link: any) => link.source.id + link.target.id
+        links,
+        (link: GameLink<PlayerNode>) => link.source.userId + link.target.userId
       )
       .join('line')
       .attr('stroke-width', 1)
@@ -52,20 +54,26 @@ export class Graph {
 
     this.nodeElements = this.nodeGroup
       .selectAll('circle')
-      .data(Object.values(this.data.nodes), (node: PlayerNode) => node.userId)
+      .data(nodes, (node: PlayerNode) => node.userId)
       .join('circle')
-      .attr('r', 10);
-    //.attr('fill', (node: Node) => (node.level === 1 ? 'red' : 'gray'));
+      .attr('r', 10)
+      .attr('fill', (node: PlayerNode) =>
+        node.userId === this.config.lichessId ? 'blue' : 'gray'
+      );
     console.log('nodeElements', this.nodeElements);
 
-    this.textElements = this.textGroup
-      .selectAll('text')
-      .data(Object.values(this.data.nodes), (node: PlayerNode) => node.userId)
-      .join('text')
-      .text((node: PlayerNode) => node.userId)
-      .attr('font-size', 15)
-      .attr('dx', 15)
-      .attr('dy', 4);
+    if (this.config.showUsernames) {
+      this.textElements = this.textGroup
+        .selectAll('text')
+        .data(nodes, (node: PlayerNode) => node.userId)
+        .join('text')
+        .text((node: PlayerNode) => node.userId)
+        .attr('font-size', 15)
+        .attr('dx', 15)
+        .attr('dy', 4);
+    } else {
+      this.textElements = this.textGroup.selectAll('text').remove();
+    }
 
     const zoomed = ({ transform }: any) => {
       this.nodeGroup.attr('transform', transform);
@@ -102,22 +110,14 @@ export class Graph {
   }
 
   redraw() {
-    if (!this.data.drawable) {
-      console.warn('data race! Not updating the graph');
-    }
+    const [nodes, links] = this.data.nodesAndLinks();
+    console.log('nodes', nodes, 'links', links);
     try {
-      this.updateGraph();
+      this.updateGraph(nodes, links);
     } catch (e) {
       console.error('during update graph', e);
     }
-
-    console.log(
-      'nodes',
-      JSON.stringify(Object.values(this.data.nodes).slice(0, 2))
-    );
-    console.log('links', Object.values(this.data.links).slice(0, 2));
-
-    this.simulation.nodes(Object.values(this.data.nodes)).on('tick', () => {
+    this.simulation.nodes(nodes).on('tick', () => {
       this.nodeElements
         .attr('cx', (node: PlayerNode) => node.x)
         .attr('cy', (node: PlayerNode) => node.y);
@@ -125,15 +125,15 @@ export class Graph {
         .attr('x', (node: PlayerNode) => node.x)
         .attr('y', (node: PlayerNode) => node.y);
       this.linkElements
-        .attr('x1', (link: any) => link.source.x)
-        .attr('y1', (link: any) => link.source.y)
-        .attr('x2', (link: any) => link.target.x)
-        .attr('y2', (link: any) => link.target.y);
+        .attr('x1', (link: GameLink<PlayerNode>) => link.source.x)
+        .attr('y1', (link: GameLink<PlayerNode>) => link.source.y)
+        .attr('x2', (link: GameLink<PlayerNode>) => link.target.x)
+        .attr('y2', (link: GameLink<PlayerNode>) => link.target.y);
     });
 
     // @ts-ignore
     try {
-      this.simulation.force('link')!.links(Object.values(this.data.links));
+      this.simulation.force('link')!.links(links);
     } catch (e) {
       console.error('during force link', e);
     }

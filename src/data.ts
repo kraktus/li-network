@@ -14,11 +14,14 @@ export interface PlayerNode extends d3.SimulationNodeDatum {
   involvement: number; // number of games this user has played against other players of the network
 }
 
-interface GameLink extends d3.SimulationLinkDatum<PlayerNode> {
+export interface GameLink<T extends PlayerNode | string | number = string>
+  extends d3.SimulationLinkDatum<PlayerNode> {
   games: number; // number of games between the two players
   score: number; // score from the first player perspective (sorted alphabetically)
   createdAt: number; // timestamp of the last game checked, used to ensure we don't check twice the same game (is it necessary?)
   plies: number; // total number of plies
+  source: T;
+  target: T;
 }
 
 export class Data {
@@ -26,7 +29,6 @@ export class Data {
   nodes: Record<string, PlayerNode>;
   // keys are `<first player sorted alphabitically>/<second player>`
   links: Record<string, GameLink>;
-  drawable: boolean; // if the data can be drawn (links AND nodes updated)
 
   constructor(readonly config: Config) {
     this.nodes = {};
@@ -38,7 +40,6 @@ export class Data {
       involvement: 0,
     };
     this.links = {};
-    this.drawable = true;
   }
 
   private getInfo(playerIds: string[]) {
@@ -60,7 +61,7 @@ export class Data {
             .reduce((a, b) => a + b);
         } catch (e) {
           games = 0;
-          console.error(e, 'when trying to count games of ', user.id, user);
+          //console.error(e, 'when trying to count games of ', user.id, user);
         }
         this.nodes[user.id].info = {
           status: status,
@@ -70,20 +71,37 @@ export class Data {
     });
   }
 
+  nodesAndLinks(): [PlayerNode[], GameLink[]] {
+    const filteredLinks = Object.values(this.links).filter(
+      link =>
+        link.games >= this.config.minVsGame &&
+        link.plies / link.games <= this.config.maxMeanPlies
+    );
+    let filteredNodes: Set<PlayerNode> = new Set();
+    filteredNodes.add(this.nodes[this.config.lichessId]);
+    filteredLinks.forEach(link =>
+      [link.source, link.target].forEach((node: string | PlayerNode) => {
+        if (typeof node === 'string') {
+          filteredNodes.add(this.nodes[node]);
+        } else {
+          // once links are added to the graph, the source/target point to `PlayerNode`s
+          filteredNodes.add(this.nodes[node.userId]);
+        }
+      })
+    );
+    return [Array.from(filteredNodes), filteredLinks];
+  }
+
   async startSearch() {
     while (this.config.searchOngoing) {
       const userId = this.chooseNewPlayerDl();
       this.nodes[userId].alreadyDl = true;
-      const games = await getGames(userId, this.config.maxGame);
-      this.drawable = false;
-      games.forEach(this.onGame.bind(this));
-      this.drawable = true;
+      await getGames(userId, this.config.maxGame, this.onGame.bind(this));
 
       const usersWithoutInfo = Object.values(this.nodes)
         .filter((node: PlayerNode) => node.info === undefined)
         .map((node: PlayerNode) => node.userId);
       chunkArray(usersWithoutInfo, 300).forEach(this.getInfo.bind(this));
-      break; // DEBUG;
     }
   }
 
