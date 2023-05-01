@@ -17,7 +17,7 @@ export interface PlayerNode extends d3.SimulationNodeDatum {
 interface GameLink extends d3.SimulationLinkDatum<PlayerNode> {
   games: number; // number of games between the two players
   score: number; // score from the first player perspective (sorted alphabetically)
-  createdAt: any; // timestamp of the last game checked, used to ensure we don't check twice the same game (is it necessary?)
+  createdAt: number; // timestamp of the last game checked, used to ensure we don't check twice the same game (is it necessary?)
   plies: number; // total number of plies
 }
 
@@ -117,6 +117,7 @@ export class Data {
     players.forEach(p => {
       let id = p[0].user.id;
       this.nodes[id] = this.nodes[id] || {
+        userId: id,
         involvement: 0,
       };
       this.nodes[id].involvement += 1;

@@ -31,12 +31,10 @@ const strong = (v: string | VNode) => h('strong', v);
 class Controller {
   searchButtonLabel: 'Start' | 'Pause' | 'Restart';
   config: Config;
-  graph: Graph;
   old: HTMLElement | VNode;
 
   constructor(elem: HTMLElement) {
     this.config = defaultConfig;
-    this.graph = new Graph(this.config);
     this.searchButtonLabel = 'Start';
     this.old = elem;
   }
@@ -92,7 +90,9 @@ class Controller {
               }
               this.redraw();
               if (this.config.searchOngoing) {
-                await this.graph.start();
+                const graph = new Graph(this.config);
+                await graph.start();
+                console.log('search stopped');
               }
             },
           },

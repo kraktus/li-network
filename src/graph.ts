@@ -1,6 +1,6 @@
 //import { select } from 'd3-selection';
 import * as d3 from 'd3';
-import { Config, defaultConfig } from './config.ts';
+import { Config } from './config.ts';
 import { Data, PlayerNode } from './data.ts';
 
 const width = window.innerWidth;
@@ -54,14 +54,14 @@ export class Graph {
 
     this.nodeElements = this.nodeGroup
       .selectAll('circle')
-      .data(Object.values(this.data.nodes), (node: any) => node.userId)
+      .data(Object.values(this.data.nodes), (node: PlayerNode) => node.userId)
       .join('circle')
       .attr('r', 10);
     //.attr('fill', (node: Node) => (node.level === 1 ? 'red' : 'gray'));
 
     this.textElements = this.textGroup
       .selectAll('text')
-      .data(Object.values(this.data.nodes), (node: any) => node.userId)
+      .data(Object.values(this.data.nodes), (node: PlayerNode) => node.userId)
       .join('text')
       .text((node: PlayerNode) => node.userId)
       .attr('font-size', 15)
@@ -89,12 +89,14 @@ export class Graph {
   async start() {
     if (this.intervalId) {
       clearInterval(this.intervalId);
+      this.intervalId = undefined;
     }
     this.intervalId = setInterval(() => {
       if (this.config.searchOngoing) {
         this.redraw();
       } else {
         clearInterval(this.intervalId);
+        this.intervalId = undefined;
       }
     }, 2000);
     await this.data.startSearch();
@@ -102,6 +104,11 @@ export class Graph {
 
   redraw() {
     this.updateGraph();
+    console.log(
+      'nodes',
+      JSON.stringify(Object.values(this.data.nodes).slice(0, 2))
+    );
+    console.log('links', Object.values(this.data.links).slice(0, 2));
 
     this.simulation.nodes(Object.values(this.data.nodes)).on('tick', () => {
       this.nodeElements
@@ -123,8 +130,24 @@ export class Graph {
   }
 }
 
-// last but not least, we call updateSimulation
-// to trigger the initial render
-//const x = defaultConfig;
-const graph = new Graph(defaultConfig); //{ lichessId: 'foo', searchOngoing: false });
-graph.redraw();
+//[
+//   { userId: german11, fx: 720, fy: 160, alreadyDl: true, involvement: 39 },
+//   { userId: alexchess1, involvement: 1 },
+// ][
+//   ({
+//     games: 1,
+//     score: 1,
+//     createdAt: 1682938532891,
+//     plies: 54,
+//     source: alexchess1,
+//     target: german11,
+//   },
+//   {
+//     games: 1,
+//     score: 0,
+//     createdAt: 1682938411480,
+//     plies: 21,
+//     source: german11,
+//     target: teddybasuel28,
+//   })
+// ];
