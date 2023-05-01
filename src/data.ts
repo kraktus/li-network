@@ -26,6 +26,7 @@ export class Data {
   nodes: Record<string, PlayerNode>;
   // keys are `<first player sorted alphabitically>/<second player>`
   links: Record<string, GameLink>;
+  drawable: boolean; // if the data can be drawn (links AND nodes updated)
 
   constructor(readonly config: Config) {
     this.nodes = {};
@@ -37,6 +38,7 @@ export class Data {
       involvement: 0,
     };
     this.links = {};
+    this.drawable = true;
   }
 
   private getInfo(playerIds: string[]) {
@@ -73,12 +75,15 @@ export class Data {
       const userId = this.chooseNewPlayerDl();
       this.nodes[userId].alreadyDl = true;
       const games = await getGames(userId, this.config.maxGame);
+      this.drawable = false;
       games.forEach(this.onGame.bind(this));
+      this.drawable = true;
 
       const usersWithoutInfo = Object.values(this.nodes)
         .filter((node: PlayerNode) => node.info === undefined)
         .map((node: PlayerNode) => node.userId);
       chunkArray(usersWithoutInfo, 300).forEach(this.getInfo.bind(this));
+      break; // DEBUG;
     }
   }
 

@@ -41,14 +41,9 @@ export async function getGames(
     `https://lichess.org/api/games/user/${userId}?max=${maxGame}&rated=true&tags=false`,
     options
   );
-  console.log('to text');
   const text = await response.text();
-  console.log(text);
-  console.log('to games');
-  console.log(text.split('\n'));
   let gamesArray = text.split('\n');
   gamesArray.pop(); // last line is empty
-  console.log('after games');
   return gamesArray.map(t => JSON.parse(t));
 }
 
