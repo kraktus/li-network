@@ -72,7 +72,8 @@ export class Data {
     while (this.config.searchOngoing) {
       const userId = this.chooseNewPlayerDl();
       this.nodes[userId].alreadyDl = true;
-      await getGames(userId, this.config.maxGame, this.onGame.bind(this));
+      const games = await getGames(userId, this.config.maxGame);
+      games.forEach(this.onGame.bind(this));
 
       const usersWithoutInfo = Object.values(this.nodes)
         .filter((node: PlayerNode) => node.info === undefined)
