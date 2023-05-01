@@ -118,7 +118,6 @@ export class Data {
       let id = p[0].user.id;
       this.nodes[id] = this.nodes[id] || {
         involvement: 0,
-        status: undefined,
       };
       this.nodes[id].involvement += 1;
     });

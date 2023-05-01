@@ -90,10 +90,10 @@ class Controller {
                 }
                 this.config.searchOngoing = !this.config.searchOngoing;
               }
+              this.redraw();
               if (this.config.searchOngoing) {
                 await this.graph.start();
               }
-              this.redraw();
             },
           },
         },
