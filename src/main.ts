@@ -31,18 +31,19 @@ const strong = (v: string | VNode) => h('strong', v);
 class Controller {
   searchButtonLabel: 'Start' | 'Pause' | 'Restart';
   config: Config;
+  inputValue: string;
   old: HTMLElement | VNode;
 
   constructor(elem: HTMLElement) {
     this.config = defaultConfig;
     this.searchButtonLabel = 'Start';
     this.old = elem;
+    this.inputValue = this.config.lichessId;
   }
   redraw() {
     this.old = patch(this.old, this.view());
   }
   view(): VNode {
-    let inputValue = this.config.lichessId;
     const lichessIdInput = h('input', {
       attrs: {
         id: 'lichessId',
@@ -52,12 +53,12 @@ class Controller {
       },
       on: {
         input: (e: any) => {
-          inputValue = (e.target as HTMLInputElement).value;
-          if (inputValue == this.config.lichessId) {
+          this.inputValue = (e.target as HTMLInputElement).value;
+          if (this.inputValue == this.config.lichessId) {
             this.config.searchOngoing
               ? (this.searchButtonLabel = 'Pause')
               : (this.searchButtonLabel = 'Restart');
-          } else {
+          } else if (this.config.searchOngoing) {
             this.searchButtonLabel = 'Restart';
           }
           this.redraw();
@@ -76,7 +77,8 @@ class Controller {
           },
           on: {
             click: async () => {
-              this.config.lichessId = inputValue;
+              this.config.lichessId = this.inputValue.toLowerCase();
+              console.log('inputValue', this.inputValue);
 
               if (this.searchButtonLabel == 'Restart') {
                 this.searchButtonLabel = 'Pause';

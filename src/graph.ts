@@ -134,7 +134,7 @@ export class Graph {
         clearInterval(this.intervalId);
         this.intervalId = undefined;
       }
-    }, 2000);
+    }, 1000);
     await this.data.startSearch();
   }
 
@@ -166,28 +166,6 @@ export class Graph {
     } catch (e) {
       console.error('during force link', e);
     }
-    this.simulation.alphaTarget(0.7).restart();
+    this.simulation.alphaTarget(0.2).restart();
   }
 }
-
-//[
-//   { userId: german11, fx: 720, fy: 160, alreadyDl: true, involvement: 39 },
-//   { userId: alexchess1, involvement: 1 },
-// ][
-//   ({
-//     games: 1,
-//     score: 1,
-//     createdAt: 1682938532891,
-//     plies: 54,
-//     source: alexchess1,
-//     target: german11,
-//   },
-//   {
-//     games: 1,
-//     score: 0,
-//     createdAt: 1682938411480,
-//     plies: 21,
-//     source: german11,
-//     target: teddybasuel28,
-//   })
-// ];
