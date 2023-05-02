@@ -39,8 +39,54 @@ export class Graph {
     this.simulation = d3
       .forceSimulation()
       .force('link', linkForce)
-      .force('charge', d3.forceManyBody().strength(-120))
+      .force('charge', d3.forceManyBody().strength(-20).distanceMax(2000))
       .force('center', d3.forceCenter(width / 2, height / 2));
+    //.force('collide', d3.forceCollide());
+
+    // simulation
+    //   .force('center')
+    //   .x(width * forceProperties.center.x)
+    //   .y(height * forceProperties.center.y);
+    // simulation
+    //   .force('charge')
+    //   .strength(
+    //     forceProperties.charge.strength *
+    //       forceProperties.charge.enabled *
+    //       config.zoom
+    //   )
+    //   .distanceMin(forceProperties.charge.distanceMin)
+    //   .distanceMax(forceProperties.charge.distanceMax);
+    // simulation
+    //   .force('collide')
+    //   .strength(
+    //     forceProperties.collide.strength * forceProperties.collide.enabled
+    //   )
+    //   .radius(forceProperties.collide.radius)
+    //   .iterations(forceProperties.collide.iterations);
+
+    //       let forceProperties = {
+    //   center: {
+    //     x: 0.5,
+    //     y: 0.5,
+    //   },
+    //   charge: {
+    //     enabled: true,
+    //     strength: -20,
+    //     distanceMin: 1,
+    //     distanceMax: 2000,
+    //   },
+    //   collide: {
+    //     enabled: true,
+    //     strength: 0.7,
+    //     iterations: 1,
+    //     radius: 5,
+    //   },
+    //   link: {
+    //     enabled: true,
+    //     distance: 30,
+    //     iterations: 1,
+    //   },
+    // };
   }
 
   // filtered out nodes and links
@@ -166,6 +212,6 @@ export class Graph {
     } catch (e) {
       console.error('during force link', e);
     }
-    this.simulation.alphaTarget(0.2).restart();
+    this.simulation.alphaDecay(0.02).alphaTarget(0.2).restart();
   }
 }
