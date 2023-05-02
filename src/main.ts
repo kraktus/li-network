@@ -64,6 +64,7 @@ class Controller {
   searchButtonLabel: 'Start' | 'Stop' | 'Restart';
   config: Config;
   inputValue: string; // temporary variable storage for `config.lichessId`
+  seniorityValue: number; // temporary variable storage for `config.maxAccountSeniority`
   graph?: Graph; // current graph if search is ongoing
 
   old: HTMLElement | VNode;
@@ -73,6 +74,7 @@ class Controller {
     this.searchButtonLabel = 'Start';
     this.old = elem;
     this.inputValue = this.config.lichessId;
+    this.seniorityValue = 1000; // hack to display a value even when `maxAccountSeniority` is undefined
   }
   redraw() {
     this.old = patch(this.old, this.view());
@@ -166,18 +168,51 @@ class Controller {
         this.config.minVsGame,
         this.simpleConfigUpdate('minVsGame')
       ),
-      h('div', 'Max mean number of plies ' + this.config.maxMeanPlies),
+      h('div', 'Max mean number of plies: ' + this.config.maxMeanPlies),
       rangeInput(
         1,
         200,
         1,
         this.config.maxMeanPlies,
         this.simpleConfigUpdate('maxMeanPlies')
-      )
+      ),
+      h(
+        'div',
+        'Max number of total games played, for the account with the least games in the match: ' +
+          this.seniorityValue
+      ),
+      h('div', [
+        h('input', {
+          attrs: {
+            type: 'checkbox',
+            checked: typeof this.config.maxAccountSeniority !== 'undefined',
+          },
+          on: {
+            click: this.bind((_: any) => {
+              this.config.maxAccountSeniority = this.seniorityValue;
+            }),
+          },
+        }),
+        rangeInput(
+          100,
+          10000,
+          100,
+          this.seniorityValue,
+          this.simpleConfigUpdate('maxMeanPlies')
+        ),
+      ])
     );
 
     const display = div(
       strong('Display'),
+      h('div', `Refresh interval: ${this.config.refreshInterval}s`),
+      rangeInput(
+        0.1,
+        5,
+        0.2,
+        this.config.refreshInterval,
+        this.simpleConfigUpdate('refreshInterval')
+      ),
       h('div', [
         h('input', {
           attrs: {
@@ -185,22 +220,26 @@ class Controller {
             checked: this.config.showUsernames,
           },
           on: {
-            click: () => {
+            click: this.bind((_: any) => {
               this.config.showUsernames = !this.config.showUsernames;
-              this.redraw();
-              this.graph?.redraw();
-            },
+            }),
           },
         }),
         h('span', 'Show usernames'),
-        h('div', `Refresh interval: ${this.config.refreshInterval}s`),
-        rangeInput(
-          0.1,
-          5,
-          0.2,
-          this.config.refreshInterval,
-          this.simpleConfigUpdate('refreshInterval')
-        ),
+      ]),
+      h('div', [
+        h('input', {
+          attrs: {
+            type: 'checkbox',
+            checked: this.config.draggableNodes,
+          },
+          on: {
+            click: this.bind((_: any) => {
+              this.config.draggableNodes = !this.config.draggableNodes;
+            }),
+          },
+        }),
+        h('span', 'Draggable user nodes'),
       ])
     );
 
@@ -250,24 +289,29 @@ class Controller {
     );
   }
 
-  private simpleSimulUpdate(key: any) {
+  private bind(f: (e: any) => void) {
     return (e: any) => {
       // @ts-ignore
-      this.config.simulation[key] = Number(
-        (e.target as HTMLInputElement).value
-      );
+      f(e);
       this.redraw();
       this.graph?.redraw();
     };
   }
 
-  private simpleConfigUpdate(key: any) {
-    return (e: any) => {
+  private simpleSimulUpdate(key: string) {
+    return this.bind((e: any) => {
       // @ts-ignore
       this.config[key] = Number((e.target as HTMLInputElement).value);
-      this.redraw();
-      this.graph?.redraw();
-    };
+    });
+  }
+
+  private simpleConfigUpdate(key: any) {
+    return this.bind((e: any) => {
+      // @ts-ignore
+      this.config.simulation[key] = Number(
+        (e.target as HTMLInputElement).value
+      );
+    });
   }
 }
 

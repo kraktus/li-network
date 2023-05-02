@@ -29,7 +29,7 @@ export const defaultConfig = {
   refreshInterval: 1.5,
   draggableNodes: true,
   simulation: {
-    alphaTarget: 0.1,
+    alphaTarget: 0.15,
     alphaDecay: 0.0228, // default value: https://devdocs.io/d3~7/d3-force#simulation_alphadecay
     strength: 120,
     linkDistance: 30,
