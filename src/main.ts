@@ -309,16 +309,16 @@ class Controller {
   private simpleSimulUpdate(key: string) {
     return this.bind((e: any) => {
       // @ts-ignore
-      this.config[key] = Number((e.target as HTMLInputElement).value);
+      this.config.simulation[key] = Number(
+        (e.target as HTMLInputElement).value
+      );
     });
   }
 
   private simpleConfigUpdate(key: any) {
     return this.bind((e: any) => {
       // @ts-ignore
-      this.config.simulation[key] = Number(
-        (e.target as HTMLInputElement).value
-      );
+      this.config[key] = Number((e.target as HTMLInputElement).value);
     });
   }
 }
