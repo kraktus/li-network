@@ -124,7 +124,13 @@ class Controller {
       lichessIdInput,
       startButton
     );
-    return controls(force(api), footer);
+    const advanced = label(
+      strong('Advanced'),
+      h('div', 'Alpha target'),
+      h('div', 'Alpha decay'),
+      h('div', 'repulsion strength')
+    );
+    return controls(force(api), force(advanced), footer);
   }
 }
 
