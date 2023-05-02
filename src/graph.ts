@@ -30,67 +30,29 @@ export class Graph {
     this.linkGroup = this.svg.append('g').attr('class', 'links');
     this.nodeGroup = this.svg.append('g').attr('class', 'nodes');
     this.textGroup = this.svg.append('g').attr('class', 'texts');
-    // how does link `source` and `target` correlates to `nodes`
+    this.simulation = d3.forceSimulation();
+    this.updateForces();
+    //.force('collide', d3.forceCollide());
+  }
+
+  private updateForces() {
+    // how does link `source` and `target` correlates to `nodes`, via `userId`
     const linkForce = d3
       .forceLink()
       .id((node: any) => node.userId)
       .distance(30);
-    //.strength((link: any) => link.strength);
-    this.simulation = d3
-      .forceSimulation()
+    console.log('decay', this.simulation.alphaDecay());
+    this.simulation
       .force('link', linkForce)
-      .force('charge', d3.forceManyBody().strength(-20).distanceMax(2000))
-      .force('center', d3.forceCenter(width / 2, height / 2));
-    //.force('collide', d3.forceCollide());
-
-    // simulation
-    //   .force('center')
-    //   .x(width * forceProperties.center.x)
-    //   .y(height * forceProperties.center.y);
-    // simulation
-    //   .force('charge')
-    //   .strength(
-    //     forceProperties.charge.strength *
-    //       forceProperties.charge.enabled *
-    //       config.zoom
-    //   )
-    //   .distanceMin(forceProperties.charge.distanceMin)
-    //   .distanceMax(forceProperties.charge.distanceMax);
-    // simulation
-    //   .force('collide')
-    //   .strength(
-    //     forceProperties.collide.strength * forceProperties.collide.enabled
-    //   )
-    //   .radius(forceProperties.collide.radius)
-    //   .iterations(forceProperties.collide.iterations);
-
-    //       let forceProperties = {
-    //   center: {
-    //     x: 0.5,
-    //     y: 0.5,
-    //   },
-    //   charge: {
-    //     enabled: true,
-    //     strength: -20,
-    //     distanceMin: 1,
-    //     distanceMax: 2000,
-    //   },
-    //   collide: {
-    //     enabled: true,
-    //     strength: 0.7,
-    //     iterations: 1,
-    //     radius: 5,
-    //   },
-    //   link: {
-    //     enabled: true,
-    //     distance: 30,
-    //     iterations: 1,
-    //   },
-    // };
+      .force('charge', d3.forceManyBody().strength(-120).distanceMax(2000))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      //.alphaDecay(this.config.simulation.alphaDecay)
+      .alphaTarget(0.3); //this.config.simulation.alphaTarget);
   }
 
   // filtered out nodes and links
   private updateGraph(nodes: PlayerNode[], links: GameLink[]) {
+    // @ts-ignore
     const colors = d3.scaleLinear().domain([0, 50]).range(['grey', 'red']);
 
     this.linkElements = this.linkGroup
@@ -135,7 +97,7 @@ export class Graph {
         window.open(`https://lichess.org/@/${node.userId}`, '_blank')
       );
 
-    console.log('nodeElements', this.nodeElements);
+    //console.log('nodeElements', this.nodeElements);
 
     if (this.config.showUsernames) {
       this.textElements = this.textGroup
@@ -186,7 +148,7 @@ export class Graph {
 
   redraw() {
     const [nodes, links] = this.data.nodesAndLinks();
-    console.log('nodes', nodes, 'links', links);
+    //console.log('nodes', nodes, 'links', links);
     try {
       this.updateGraph(nodes, links);
     } catch (e) {
@@ -212,6 +174,7 @@ export class Graph {
     } catch (e) {
       console.error('during force link', e);
     }
-    this.simulation.alphaDecay(0.02).alphaTarget(0.2).restart();
+    this.updateForces();
+    this.simulation.restart();
   }
 }
