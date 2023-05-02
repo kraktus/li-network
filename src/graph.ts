@@ -195,6 +195,6 @@ export class Graph {
       console.error('during force link', e);
     }
 
-    this.simulation.restart();
+    this.simulation.alpha(1).restart();
   }
 }

@@ -12,12 +12,10 @@
 .start {
   background: #82bf56;
   border-bottom: 5px solid #759900;
-  text-shadow: 0 -1px #759900;
 }
-.pause {
-  background: #b4b4b4;
-  border-bottom: 5px solid #737373;
-  text-shadow: 0 -1px #737373;
+.stop {
+  background: rgba(221, 20, 60, 0.81);
+  border-bottom: 5px solid #bd1d3d;
 }
 
 html {

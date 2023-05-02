@@ -61,7 +61,7 @@ const rangeInput = (
   });
 
 class Controller {
-  searchButtonLabel: 'Start' | 'Pause' | 'Restart';
+  searchButtonLabel: 'Start' | 'Stop' | 'Restart';
   config: Config;
   inputValue: string; // temporary variable storage for `config.lichessId`
   graph?: Graph; // current graph if search is ongoing
@@ -90,7 +90,7 @@ class Controller {
           this.inputValue = (e.target as HTMLInputElement).value;
           if (this.inputValue == this.config.lichessId) {
             this.config.searchOngoing
-              ? (this.searchButtonLabel = 'Pause')
+              ? (this.searchButtonLabel = 'Stop')
               : (this.searchButtonLabel = 'Restart');
           } else if (this.config.searchOngoing) {
             this.searchButtonLabel = 'Restart';
@@ -99,15 +99,15 @@ class Controller {
         },
       },
     });
-    const isPauseLabel = this.searchButtonLabel == 'Pause';
+    const isStopLabel = this.searchButtonLabel == 'Stop';
     const startButton = h(
       'div',
       h(
         'button.chunky',
         {
           class: {
-            pause: isPauseLabel,
-            start: !isPauseLabel,
+            stop: isStopLabel,
+            start: !isStopLabel,
           },
           on: {
             click: async () => {
@@ -115,12 +115,12 @@ class Controller {
               console.log('inputValue', this.inputValue);
 
               if (this.searchButtonLabel == 'Restart') {
-                this.searchButtonLabel = 'Pause';
+                this.searchButtonLabel = 'Stop';
               } else {
-                if (this.searchButtonLabel == 'Pause') {
+                if (this.searchButtonLabel == 'Stop') {
                   this.searchButtonLabel = 'Start';
                 } else {
-                  this.searchButtonLabel = 'Pause';
+                  this.searchButtonLabel = 'Stop';
                 }
                 this.config.searchOngoing = !this.config.searchOngoing;
               }
