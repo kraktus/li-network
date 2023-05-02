@@ -24,6 +24,11 @@ export interface GameLink<T extends PlayerNode | string | number = string>
   target: T;
 }
 
+const userIds = (link: GameLink): string[] =>
+  [link.source, link.target].map((node: string | PlayerNode) =>
+    typeof node === 'string' ? node : node.userId
+  );
+
 export class Data {
   // keys are Lichess user id
   nodes: Record<string, PlayerNode>;
@@ -71,11 +76,24 @@ export class Data {
     });
   }
 
+  private isBelowSeniorityThreshold(link: GameLink): boolean {
+    if (this.config.maxAccountSeniority === undefined) {
+      return true;
+    } else {
+      return userIds(link).some((userId: string) =>
+        this.nodes[userId].info === undefined
+          ? false
+          : this.nodes[userId].info!.games <= this.config.maxAccountSeniority!
+      );
+    }
+  }
+
   nodesAndLinks(): [PlayerNode[], GameLink[]] {
     const filteredLinks = Object.values(this.links).filter(
       link =>
         link.games >= this.config.minVsGame &&
-        link.plies / link.games <= this.config.maxMeanPlies
+        link.plies / link.games <= this.config.maxMeanPlies &&
+        this.isBelowSeniorityThreshold(link)
     );
     let filteredNodes: Set<PlayerNode> = new Set();
     filteredNodes.add(this.nodes[this.config.lichessId]);

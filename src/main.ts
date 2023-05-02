@@ -189,18 +189,26 @@ class Controller {
           },
           on: {
             click: this.bind((_: any) => {
-              this.config.maxAccountSeniority = this.seniorityValue;
+              if (typeof this.config.maxAccountSeniority === 'undefined') {
+                this.config.maxAccountSeniority = this.seniorityValue;
+              } else {
+                this.config.maxAccountSeniority = undefined;
+              }
             }),
           },
         }),
-        rangeInput(
-          100,
-          10000,
-          100,
-          this.seniorityValue,
-          this.simpleConfigUpdate('maxMeanPlies')
-        ),
-      ])
+        h('span', 'Enable'),
+      ]),
+      rangeInput(
+        100,
+        10000,
+        100,
+        this.seniorityValue,
+        this.bind(
+          (e: any) =>
+            (this.seniorityValue = Number((e.target as HTMLInputElement).value))
+        )
+      )
     );
 
     const display = div(
