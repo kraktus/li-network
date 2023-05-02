@@ -7,6 +7,7 @@ export interface Config {
   minVsGame: number;
   maxMeanPlies: number;
   maxAccountSeniority?: number; // max number of games the user has played
+  draggableNodes: boolean;
   simulation: Simulation;
 }
 
@@ -26,8 +27,9 @@ export const defaultConfig = {
   minVsGame: 2,
   maxMeanPlies: 100,
   refreshInterval: 1.5,
+  draggableNodes: true,
   simulation: {
-    alphaTarget: 0.3,
+    alphaTarget: 0.1,
     alphaDecay: 0.0228, // default value: https://devdocs.io/d3~7/d3-force#simulation_alphadecay
     strength: 120,
     linkDistance: 30,
