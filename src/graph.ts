@@ -40,11 +40,19 @@ export class Graph {
     const linkForce = d3
       .forceLink()
       .id((node: any) => node.userId)
-      .distance(30);
+      .distance(this.config.simulation.linkDistance);
     this.simulation
       .force('link', linkForce)
-      .force('charge', d3.forceManyBody().strength(-120).distanceMax(2000))
-      .force('center', d3.forceCenter(width / 2, height / 2));
+      .force(
+        'charge',
+        d3
+          .forceManyBody()
+          .strength(-this.config.simulation.strength)
+          .distanceMax(2000)
+      )
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .alphaDecay(this.config.simulation.alphaDecay)
+      .alphaTarget(this.config.simulation.alphaTarget);
   }
 
   // filtered out nodes and links
@@ -122,7 +130,7 @@ export class Graph {
           [0, 0],
           [width, height],
         ])
-        .scaleExtent([1, 8])
+        .scaleExtent([0.1, 8])
         .on('zoom', zoomed)
     );
   }
@@ -151,7 +159,7 @@ export class Graph {
     } catch (e) {
       console.error('during update graph', e);
     }
-    // forces need to be updated before setting links!
+    // forces need to be updated before setting links! (and maybe nodes, so be conservative)
     this.updateForces();
 
     this.simulation.nodes(nodes).on('tick', () => {
@@ -174,9 +182,6 @@ export class Graph {
       console.error('during force link', e);
     }
 
-    this.simulation
-      .alphaDecay(this.config.simulation.alphaDecay)
-      .alphaTarget(this.config.simulation.alphaTarget)
-      .restart();
+    this.simulation.restart();
   }
 }

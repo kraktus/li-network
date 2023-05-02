@@ -163,15 +163,22 @@ class Controller {
           this.config.simulation.alphaDecay,
           this.simpleSimulUpdate('alphaDecay')
         ),
-        h('div', 'Repulsion strength: ' + -this.config.simulation.strength),
-        rangeInput(1, 200, 1, -this.config.simulation.strength, (e: any) => {
-          // minus is important here!
-          this.config.simulation.strength = -Number(
-            (e.target as HTMLInputElement).value
-          );
-          this.redraw();
-          this.graph?.redraw();
-        }),
+        h('div', 'Repulsion strength: ' + this.config.simulation.strength),
+        rangeInput(
+          1,
+          200,
+          1,
+          this.config.simulation.strength,
+          this.simpleSimulUpdate('strength')
+        ),
+        h('div', 'Link distance: ' + this.config.simulation.linkDistance),
+        rangeInput(
+          1,
+          100,
+          1,
+          this.config.simulation.linkDistance,
+          this.simpleSimulUpdate('linkDistance')
+        ),
       ])
     );
     return controls(force(api), force(advanced), footer);
