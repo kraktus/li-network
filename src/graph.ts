@@ -77,6 +77,12 @@ export class Graph {
           '_blank'
         );
       });
+    this.linkElements
+      .append('title')
+      .text(
+        (link: GameLink<PlayerNode>) =>
+          `${link.source}: ${link.score}/${link.games}`
+      );
 
     this.nodeElements = this.nodeGroup
       .selectAll('circle')
@@ -101,11 +107,9 @@ export class Graph {
       .on('click', (_: MouseEvent, node: PlayerNode) =>
         window.open(`https://lichess.org/@/${node.userId}`, '_blank')
       );
-
-    //console.log('nodeElements', this.nodeElements);
+    this.nodeElements.append('title').text((node: PlayerNode) => node.userId);
 
     if (this.config.showUsernames) {
-      console.log('SHOW TIME');
       this.textElements = this.textGroup
         .selectAll('text')
         .data(nodes, (node: PlayerNode) => node.userId)
@@ -166,7 +170,6 @@ export class Graph {
 
   redraw() {
     const [nodes, links] = this.data.nodesAndLinks();
-    //console.log('nodes', nodes, 'links', links);
     try {
       this.updateGraph(nodes, links);
     } catch (e) {
@@ -195,6 +198,6 @@ export class Graph {
       console.error('during force link', e);
     }
 
-    this.simulation.alpha(1).restart();
+    this.simulation.restart();
   }
 }
