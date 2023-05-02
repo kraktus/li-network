@@ -12,7 +12,8 @@ export interface Config {
 interface Simulation {
   alphaTarget: number;
   alphaDecay: number;
-  strength: number;
+  strength: number; // absolute value of the repulsive force between nodes
+  linkDistance: number;
 }
 
 export const defaultConfig = {
@@ -26,6 +27,7 @@ export const defaultConfig = {
   simulation: {
     alphaTarget: 0.3,
     alphaDecay: 0.0228, // default value: https://devdocs.io/d3~7/d3-force#simulation_alphadecay
-    strength: -120,
+    strength: 120,
+    linkDistance: 30,
   },
 };
