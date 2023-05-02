@@ -1,8 +1,9 @@
 export interface Config {
   searchOngoing: boolean;
   lichessId: string;
-  maxGame: number;
+  maxGame: number; // max number of games to fetch per player
   showUsernames: boolean;
+  refreshInterval: number; // in seconds, time between two refresh
   minVsGame: number;
   maxMeanPlies: number;
   maxAccountSeniority?: number; // max number of games the user has played
@@ -24,6 +25,7 @@ export const defaultConfig = {
   showUsernames: false,
   minVsGame: 2,
   maxMeanPlies: 100,
+  refreshInterval: 1.5,
   simulation: {
     alphaTarget: 0.3,
     alphaDecay: 0.0228, // default value: https://devdocs.io/d3~7/d3-force#simulation_alphadecay

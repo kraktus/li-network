@@ -26,7 +26,7 @@ const patch = init([
 
 const controls = (...nodes: VNode[]) => h('div.controls', nodes);
 const force = (...nodes: VNode[]) => h('div.force', nodes);
-const label = (...nodes: VNode[]) => h('label', nodes);
+const div = (...nodes: VNode[]) => h('div', nodes);
 const strong = (v: string | VNode) => h('strong', v);
 const footer = h('div.dropup', [
   h('button.dropbtn', 'v: latest'),
@@ -137,14 +137,74 @@ class Controller {
       )
     );
 
-    const api = label(
+    const api = div(
       strong('Api'),
       h('div', 'Lichess username'),
       lichessIdInput,
-      startButton
+      startButton,
+      h('div', 'Max number of games fetched by player: ' + this.config.maxGame),
+      rangeInput(
+        50,
+        1000,
+        10,
+        this.config.maxGame,
+        this.simpleConfigUpdate('maxGame')
+      )
     );
 
-    const advanced = label(
+    const filters = div(
+      strong('Filters'),
+      h(
+        'div',
+        'Minimum number of games played against each other: ' +
+          this.config.minVsGame
+      ),
+      rangeInput(
+        1,
+        20,
+        1,
+        this.config.minVsGame,
+        this.simpleConfigUpdate('minVsGame')
+      ),
+      h('div', 'Max mean number of plies ' + this.config.maxMeanPlies),
+      rangeInput(
+        1,
+        200,
+        1,
+        this.config.maxMeanPlies,
+        this.simpleConfigUpdate('maxMeanPlies')
+      )
+    );
+
+    const display = div(
+      strong('Display'),
+      h('div', [
+        h('input', {
+          attrs: {
+            type: 'checkbox',
+            checked: this.config.showUsernames,
+          },
+          on: {
+            click: () => {
+              this.config.showUsernames = !this.config.showUsernames;
+              this.redraw();
+              this.graph?.redraw();
+            },
+          },
+        }),
+        h('span', 'Show usernames'),
+        h('div', `Refresh interval: ${this.config.refreshInterval}s`),
+        rangeInput(
+          0.1,
+          5,
+          0.2,
+          this.config.refreshInterval,
+          this.simpleConfigUpdate('refreshInterval')
+        ),
+      ])
+    );
+
+    const advanced = div(
       h('details', [
         h('summary', strong('Advanced')),
         h('div', 'Alpha target: ' + this.config.simulation.alphaTarget),
@@ -181,19 +241,31 @@ class Controller {
         ),
       ])
     );
-    return controls(force(api), force(advanced), footer);
+    return controls(
+      force(api),
+      force(filters),
+      force(display),
+      force(advanced),
+      footer
+    );
   }
 
   private simpleSimulUpdate(key: any) {
     return (e: any) => {
       // @ts-ignore
-      console.log(key, this[key]);
-      // @ts-ignore
       this.config.simulation[key] = Number(
         (e.target as HTMLInputElement).value
       );
       this.redraw();
-      console.log('redrawn');
+      this.graph?.redraw();
+    };
+  }
+
+  private simpleConfigUpdate(key: any) {
+    return (e: any) => {
+      // @ts-ignore
+      this.config[key] = Number((e.target as HTMLInputElement).value);
+      this.redraw();
       this.graph?.redraw();
     };
   }
