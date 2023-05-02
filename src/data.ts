@@ -60,13 +60,17 @@ export class Data {
           status = 'good';
         }
         try {
-          games = Object.keys(user.perfs)
-            .filter(x => !['puzzle', 'storm', 'streak', 'racer'].includes(x))
-            .map(perfT => user.perfs[perfT].games)
-            .reduce((a, b) => a + b);
+          games = user.disabled
+            ? 0
+            : Object.keys(user.perfs)
+                .filter(
+                  x => !['puzzle', 'storm', 'streak', 'racer'].includes(x)
+                )
+                .map(perfT => user.perfs[perfT].games)
+                .reduce((a, b) => a + b);
         } catch (e) {
           games = 0;
-          //console.error(e, 'when trying to count games of ', user.id, user);
+          console.error(e, 'when trying to count games of ', user.id, user);
         }
         this.nodes[user.id].info = {
           status: status,
