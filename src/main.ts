@@ -42,11 +42,30 @@ const footer = h('div.dropup', [
     ),
   ]),
 ]);
+const rangeInput = (
+  min: number,
+  max: number,
+  step: number,
+  value: number,
+  onInput: (e: any) => void = _ => {}
+) =>
+  h('input', {
+    attrs: {
+      type: 'range',
+      min: min,
+      max: max,
+      step: step,
+      value: value,
+    },
+    on: { input: onInput },
+  });
 
 class Controller {
   searchButtonLabel: 'Start' | 'Pause' | 'Restart';
   config: Config;
-  inputValue: string;
+  inputValue: string; // temporary variable storage for `config.lichessId`
+  graph?: Graph; // current graph if search is ongoing
+
   old: HTMLElement | VNode;
 
   constructor(elem: HTMLElement) {
@@ -107,9 +126,10 @@ class Controller {
               }
               this.redraw();
               if (this.config.searchOngoing) {
-                const graph = new Graph(this.config);
-                await graph.start();
+                this.graph = new Graph(this.config);
+                await this.graph.start();
                 console.log('search stopped');
+                this.graph = undefined;
               }
             },
           },
@@ -124,11 +144,42 @@ class Controller {
       lichessIdInput,
       startButton
     );
+
     const advanced = label(
-      strong('Advanced'),
-      h('div', 'Alpha target'),
-      h('div', 'Alpha decay'),
-      h('div', 'repulsion strength')
+      h('details', [
+        h('summary', strong('Advanced')),
+        h('div', 'Alpha target: ' + this.config.simulation.alphaTarget),
+        rangeInput(0, 1, 0.01, this.config.simulation.alphaTarget, (e: any) => {
+          this.config.simulation.alphaTarget = Number(
+            (e.target as HTMLInputElement).value
+          );
+          this.redraw();
+          this.graph?.redraw();
+        }),
+        h('div', 'Alpha decay: ' + this.config.simulation.alphaDecay),
+        rangeInput(
+          0,
+          0.06,
+          0.001,
+          this.config.simulation.alphaDecay,
+          (e: any) => {
+            this.config.simulation.alphaDecay = Number(
+              (e.target as HTMLInputElement).value
+            );
+            this.redraw();
+            this.graph?.redraw();
+          }
+        ),
+        h('div', 'Repulsion strength: ' + -this.config.simulation.strength),
+        rangeInput(1, 200, 1, -this.config.simulation.strength, (e: any) => {
+          // minus is important here!
+          this.config.simulation.strength = -Number(
+            (e.target as HTMLInputElement).value
+          );
+          this.redraw();
+          this.graph?.redraw();
+        }),
+      ])
     );
     return controls(force(api), force(advanced), footer);
   }
