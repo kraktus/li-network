@@ -1,4 +1,5 @@
 import './style.css';
+import './github.css';
 import './graph.ts';
 import { Config, defaultConfig } from './config.ts';
 import { Graph } from './graph.ts';
@@ -27,6 +28,20 @@ const controls = (...nodes: VNode[]) => h('div.controls', nodes);
 const force = (...nodes: VNode[]) => h('div.force', nodes);
 const label = (...nodes: VNode[]) => h('label', nodes);
 const strong = (v: string | VNode) => h('strong', v);
+const footer = h('div.dropup', [
+  h('button.dropbtn', 'v: latest'),
+  h('div.dropup-content', [
+    h(
+      'a',
+      {
+        attrs: {
+          href: '/v0.1',
+        },
+      },
+      'v: 0.1'
+    ),
+  ]),
+]);
 
 class Controller {
   searchButtonLabel: 'Start' | 'Pause' | 'Restart';
@@ -109,7 +124,7 @@ class Controller {
       lichessIdInput,
       startButton
     );
-    return controls(force(api));
+    return controls(force(api), footer);
   }
 }
 
