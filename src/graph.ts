@@ -84,6 +84,36 @@ export class Graph {
           `${link.source}: ${link.score}/${link.games}`
       );
 
+    function drag(lichessId: string) {
+      function dragstarted(event: any, node: PlayerNode) {
+        node.fx = event.subject.x;
+        node.fy = event.subject.y;
+      }
+
+      function dragged(event: any, node: PlayerNode) {
+        node.fx = event.x;
+        node.fy = event.y;
+      }
+
+      function dragended(_: any, node: PlayerNode) {
+        if (node.userId != lichessId) {
+          node.fx = null;
+          node.fy = null;
+        }
+      }
+
+      return (
+        d3
+          .drag()
+          // @ts-ignore
+          .on('start', dragstarted)
+          // @ts-ignore
+          .on('drag', dragged)
+          // @ts-ignore
+          .on('end', dragended)
+      );
+    }
+
     this.nodeElements = this.nodeGroup
       .selectAll('circle')
       .data(nodes, (node: PlayerNode) => node.userId)
@@ -107,6 +137,11 @@ export class Graph {
       .on('click', (_: MouseEvent, node: PlayerNode) =>
         window.open(`https://lichess.org/@/${node.userId}`, '_blank')
       );
+    if (this.config.draggableNodes) {
+      this.nodeElements.call(drag(this.config.lichessId));
+    } else {
+      this.nodeElements.on('.drag', null);
+    }
     this.nodeElements.append('title').text((node: PlayerNode) => node.userId);
 
     if (this.config.showUsernames) {
