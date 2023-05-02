@@ -129,7 +129,6 @@ class Controller {
                 this.graph = new Graph(this.config);
                 await this.graph.start();
                 console.log('search stopped');
-                this.graph = undefined;
               }
             },
           },
@@ -149,26 +148,20 @@ class Controller {
       h('details', [
         h('summary', strong('Advanced')),
         h('div', 'Alpha target: ' + this.config.simulation.alphaTarget),
-        rangeInput(0, 1, 0.01, this.config.simulation.alphaTarget, (e: any) => {
-          this.config.simulation.alphaTarget = Number(
-            (e.target as HTMLInputElement).value
-          );
-          this.redraw();
-          this.graph?.redraw();
-        }),
-        h('div', 'Alpha decay: ' + this.config.simulation.alphaDecay),
         rangeInput(
           0,
+          1,
+          0.01,
+          this.config.simulation.alphaTarget,
+          this.simpleSimulUpdate('alphaTarget')
+        ),
+        h('div', 'Alpha decay: ' + this.config.simulation.alphaDecay),
+        rangeInput(
+          0.001,
           0.06,
           0.001,
           this.config.simulation.alphaDecay,
-          (e: any) => {
-            this.config.simulation.alphaDecay = Number(
-              (e.target as HTMLInputElement).value
-            );
-            this.redraw();
-            this.graph?.redraw();
-          }
+          this.simpleSimulUpdate('alphaDecay')
         ),
         h('div', 'Repulsion strength: ' + -this.config.simulation.strength),
         rangeInput(1, 200, 1, -this.config.simulation.strength, (e: any) => {
@@ -182,6 +175,20 @@ class Controller {
       ])
     );
     return controls(force(api), force(advanced), footer);
+  }
+
+  private simpleSimulUpdate(key: any) {
+    return (e: any) => {
+      // @ts-ignore
+      console.log(key, this[key]);
+      // @ts-ignore
+      this.config.simulation[key] = Number(
+        (e.target as HTMLInputElement).value
+      );
+      this.redraw();
+      console.log('redrawn');
+      this.graph?.redraw();
+    };
   }
 }
 
