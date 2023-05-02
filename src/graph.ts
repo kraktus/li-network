@@ -41,13 +41,10 @@ export class Graph {
       .forceLink()
       .id((node: any) => node.userId)
       .distance(30);
-    console.log('decay', this.simulation.alphaDecay());
     this.simulation
       .force('link', linkForce)
       .force('charge', d3.forceManyBody().strength(-120).distanceMax(2000))
-      .force('center', d3.forceCenter(width / 2, height / 2))
-      //.alphaDecay(this.config.simulation.alphaDecay)
-      .alphaTarget(0.3); //this.config.simulation.alphaTarget);
+      .force('center', d3.forceCenter(width / 2, height / 2));
   }
 
   // filtered out nodes and links
@@ -154,6 +151,9 @@ export class Graph {
     } catch (e) {
       console.error('during update graph', e);
     }
+    // forces need to be updated before setting links!
+    this.updateForces();
+
     this.simulation.nodes(nodes).on('tick', () => {
       this.nodeElements
         .attr('cx', (node: PlayerNode) => node.x)
@@ -167,14 +167,16 @@ export class Graph {
         .attr('x2', (link: GameLink<PlayerNode>) => link.target.x)
         .attr('y2', (link: GameLink<PlayerNode>) => link.target.y);
     });
-
     // @ts-ignore
     try {
       this.simulation.force('link')!.links(links);
     } catch (e) {
       console.error('during force link', e);
     }
-    this.updateForces();
-    this.simulation.restart();
+
+    this.simulation
+      .alphaDecay(this.config.simulation.alphaDecay)
+      .alphaTarget(this.config.simulation.alphaTarget)
+      .restart();
   }
 }
