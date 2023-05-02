@@ -105,6 +105,7 @@ export class Graph {
     //console.log('nodeElements', this.nodeElements);
 
     if (this.config.showUsernames) {
+      console.log('SHOW TIME');
       this.textElements = this.textGroup
         .selectAll('text')
         .data(nodes, (node: PlayerNode) => node.userId)
@@ -140,15 +141,27 @@ export class Graph {
       clearInterval(this.intervalId);
       this.intervalId = undefined;
     }
+    this.fireInterval(this.config.refreshInterval);
+    await this.data.startSearch();
+  }
+
+  // in seconds
+  private fireInterval(refreshInterval: number) {
     this.intervalId = setInterval(() => {
-      if (this.config.searchOngoing) {
+      if (
+        this.config.searchOngoing &&
+        this.config.refreshInterval == refreshInterval
+      ) {
         this.redraw();
+        console.log('refreshInterval', refreshInterval);
       } else {
         clearInterval(this.intervalId);
         this.intervalId = undefined;
+        if (this.config.refreshInterval != refreshInterval) {
+          this.fireInterval(this.config.refreshInterval);
+        }
       }
-    }, 1000);
-    await this.data.startSearch();
+    }, refreshInterval * 1000);
   }
 
   redraw() {

@@ -45,11 +45,6 @@ body {
   padding: 5px;
   margin: 5px 0;
 }
-.controls .force p label {
-  margin-right: 0.5em;
-  font-size: 120%;
-  font-weight: bold;
-}
 .controls .force p {
   margin-top: 0;
 }
