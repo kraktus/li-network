@@ -178,14 +178,17 @@ class Controller {
       ),
       h(
         'div',
-        'Max number of total games played, for the account with the least games in the match: ' +
-          this.seniorityValue
+        `Max number of total games played, for the account with the least games in the match${
+          this.config.maxAccountSeniority !== undefined
+            ? `: ${this.config.maxAccountSeniority}`
+            : ''
+        }`
       ),
       h('div', [
         h('input', {
           attrs: {
             type: 'checkbox',
-            checked: typeof this.config.maxAccountSeniority !== 'undefined',
+            checked: this.config.maxAccountSeniority !== undefined,
           },
           on: {
             click: this.bind((_: any) => {
@@ -199,16 +202,15 @@ class Controller {
         }),
         h('span', 'Enable'),
       ]),
-      rangeInput(
-        100,
-        10000,
-        100,
-        this.seniorityValue,
-        this.bind(
-          (e: any) =>
-            (this.seniorityValue = Number((e.target as HTMLInputElement).value))
-        )
-      )
+      this.config.maxAccountSeniority
+        ? rangeInput(
+            100,
+            10000,
+            100,
+            this.seniorityValue,
+            this.simpleConfigUpdate('maxAccountSeniority')
+          )
+        : h('div')
     );
 
     const display = div(
