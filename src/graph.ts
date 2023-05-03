@@ -3,8 +3,8 @@ import * as d3 from 'd3';
 import { Config } from './config.ts';
 import { Data, PlayerNode, GameLink } from './data.ts';
 
-const width = window.innerWidth;
-const height = window.innerHeight;
+const width = 1440;
+const height = 820;
 
 export class Graph {
   svg: any;
@@ -25,8 +25,9 @@ export class Graph {
     this.data = new Data(config);
     this.svg = d3.select('svg');
     this.svg.selectAll('*').remove();
-    this.svg.attr('width', width).attr('height', height);
-    this.svg.append('g').attr('class', 'links');
+    this.svg
+      .attr('viewBox', `0 0  ${width} ${height}`)
+      .attr('perserveAspectRatio', 'xMinYMid');
     this.linkGroup = this.svg.append('g').attr('class', 'links');
     this.nodeGroup = this.svg.append('g').attr('class', 'nodes');
     this.textGroup = this.svg.append('g').attr('class', 'texts');
