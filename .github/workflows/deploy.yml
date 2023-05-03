@@ -44,6 +44,8 @@ jobs:
         run: pnpm install
       - name: Build
         run: pnpm run build
+      - name: Include v0.1
+        run: cp v0-1.html dist/v0-1.html
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Upload artifact
