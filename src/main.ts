@@ -35,7 +35,7 @@ const footer = h('div.dropup', [
       'a',
       {
         attrs: {
-          href: '/v0-1.html',
+          href: '/li-network/v0-1.html',
         },
       },
       'v: 0.1'
