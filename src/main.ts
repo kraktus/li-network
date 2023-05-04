@@ -325,7 +325,7 @@ class Controller {
   }
 }
 
-console.log('v0.2-dev');
+console.log('v0.2');
 const container = document.getElementById('container')!;
 const ctrl = new Controller(container);
 ctrl.redraw();
